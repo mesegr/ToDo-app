@@ -4,10 +4,12 @@ import '../models/task.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
+  final VoidCallback? onTap;
 
   const TaskCard({
     super.key,
     required this.task,
+    this.onTap,
   });
 
   String _formatTime(DateTime dateTime) {
@@ -20,6 +22,8 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final repetitionDesc = task.getRepetitionDescription();
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -27,21 +31,13 @@ class TaskCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
-        onTap: () {
-          // Acción al tocar la tarjeta (puedes expandir esto más tarde)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Seleccionaste: ${task.title}'),
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        },
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Icono de tarea
+              // Icono decorativo de tarea
               Container(
                 width: 50,
                 height: 50,
@@ -50,7 +46,7 @@ class TaskCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
-                  Icons.check_circle_outline,
+                  Icons.assignment_outlined,
                   color: Colors.blue,
                   size: 28,
                 ),
@@ -66,6 +62,7 @@ class TaskCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -86,13 +83,35 @@ class TaskCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    // Mostrar indicador de repetición
+                    if (repetitionDesc.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.repeat,
+                            size: 16,
+                            color: Colors.orange[700],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            repetitionDesc,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
-              // Flecha o ícono adicional
+              // Icono de editar
               Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
+                Icons.edit_outlined,
+                size: 20,
                 color: Colors.grey[400],
               ),
             ],
