@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'screens/home_screen.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar Android Alarm Manager
+  await AndroidAlarmManager.initialize();
+  
+  // Inicializar el servicio de notificaciones
+  await NotificationService().initialize();
+  
   runApp(const MainApp());
 }
 

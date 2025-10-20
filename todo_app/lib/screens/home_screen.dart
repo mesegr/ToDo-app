@@ -4,8 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
 import '../models/repetition_type.dart';
 import '../widgets/task_card.dart';
+import '../services/notification_service.dart';
+import '../helpers/miui_permissions_helper.dart';
 import 'add_task_screen.dart';
 import 'edit_task_screen.dart';
+import 'alarm_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +31,29 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadTasks();
+    
+    // Configurar el callback para cuando se toque una notificación
+    NotificationService().onNotificationTap = (String taskId) {
+      // Mostrar la pantalla de alarma
+      _showAlarmScreen(taskId);
+    };
+    
+    // Mostrar instrucciones MIUI la primera vez
+    _showMiuiInstructionsIfNeeded();
+  }
+  
+  Future<void> _showMiuiInstructionsIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final shown = prefs.getBool('miui_instructions_shown') ?? false;
+    
+    if (!shown && mounted) {
+      // Esperar a que la pantalla esté lista
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        await MiuiPermissionsHelper.showMiuiInstructions(context);
+        await prefs.setBool('miui_instructions_shown', true);
+      }
+    }
   }
 
   // Cargar tareas desde SharedPreferences
@@ -69,6 +95,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Guardar cambios
       await _saveTasks();
+      
+      // Programar la notificación
+      await NotificationService().scheduleNotification(newTask);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -102,6 +131,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Guardar cambios
       await _saveTasks();
+      
+      // Re-programar la notificación con los nuevos datos
+      await NotificationService().scheduleNotification(updatedTask);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -126,6 +158,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Guardar cambios
     await _saveTasks();
+    
+    // Cancelar la notificación
+    await NotificationService().cancelNotification(task.id);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -142,11 +177,52 @@ class _HomeScreenState extends State<HomeScreen> {
               });
               // Guardar de nuevo al deshacer
               await _saveTasks();
+              // Re-programar la notificación
+              await NotificationService().scheduleNotification(deletedTask);
             },
           ),
         ),
       );
     }
+  }
+
+  // Método para eliminar tarea cuando se descarta la alarma (solo para tareas no repetitivas)
+  void _dismissAlarm(String taskId) async {
+    final task = tasks.firstWhere((t) => t.id == taskId);
+    
+    if (task.repetitionType == RepetitionType.none) {
+      setState(() {
+        tasks.removeWhere((t) => t.id == taskId);
+      });
+      
+      await _saveTasks();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tarea "${task.title}" completada y eliminada'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+  
+  // Mostrar pantalla de alarma
+  void _showAlarmScreen(String taskId) {
+    final task = tasks.firstWhere((t) => t.id == taskId);
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => AlarmScreen(
+          task: task,
+          onDismiss: _dismissAlarm,
+        ),
+      ),
+    );
   }
 
   // Filtrar tareas según la pestaña seleccionada
