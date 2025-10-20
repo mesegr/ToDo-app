@@ -17,7 +17,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   RepetitionType _repetitionType = RepetitionType.none;
-  DayOfWeek? _selectedWeekDay;
+  List<DayOfWeek> _selectedWeekDays = [];
   int? _selectedMonthDay;
 
   @override
@@ -64,10 +64,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       );
 
       // Validar que si es semanal, tenga un día seleccionado
-      if (_repetitionType == RepetitionType.weekly && _selectedWeekDay == null) {
+      if (_repetitionType == RepetitionType.weekly && _selectedWeekDays.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Por favor selecciona un día de la semana'),
+            content: Text('Por favor selecciona al menos un día de la semana'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -90,7 +90,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         title: _titleController.text,
         assignedTime: assignedDateTime,
         repetitionType: _repetitionType,
-        weeklyDay: _selectedWeekDay,
+        weeklyDays: _selectedWeekDays,
         monthlyDay: _selectedMonthDay,
       );
 
@@ -109,7 +109,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Selecciona el día de la semana:',
+                  'Selecciona los días de la semana:',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -120,13 +120,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: DayOfWeek.values.map((day) {
-                    final isSelected = _selectedWeekDay == day;
+                    final isSelected = _selectedWeekDays.contains(day);
                     return ChoiceChip(
                       label: Text(day.displayName),
                       selected: isSelected,
                       onSelected: (selected) {
                         setState(() {
-                          _selectedWeekDay = selected ? day : null;
+                          if (selected) {
+                            _selectedWeekDays.add(day);
+                          } else {
+                            _selectedWeekDays.remove(day);
+                          }
                         });
                       },
                       selectedColor: const Color(0xFF8B5CF6),
@@ -262,7 +266,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       setState(() {
                         _repetitionType = value!;
                         // Limpiar selecciones previas
-                        _selectedWeekDay = null;
+                        _selectedWeekDays = [];
                         _selectedMonthDay = null;
                       });
                     },

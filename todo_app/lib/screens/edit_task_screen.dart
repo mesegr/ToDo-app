@@ -22,7 +22,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
   late RepetitionType _repetitionType;
-  DayOfWeek? _selectedWeekDay;
+  List<DayOfWeek> _selectedWeekDays = [];
   int? _selectedMonthDay;
 
   @override
@@ -33,7 +33,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     _selectedDate = widget.task.assignedTime;
     _selectedTime = TimeOfDay.fromDateTime(widget.task.assignedTime);
     _repetitionType = widget.task.repetitionType;
-    _selectedWeekDay = widget.task.weeklyDay;
+    _selectedWeekDays = List.from(widget.task.weeklyDays);
     _selectedMonthDay = widget.task.monthlyDay;
   }
 
@@ -81,10 +81,10 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       );
 
       // Validar que si es semanal, tenga un día seleccionado
-      if (_repetitionType == RepetitionType.weekly && _selectedWeekDay == null) {
+      if (_repetitionType == RepetitionType.weekly && _selectedWeekDays.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Por favor selecciona un día de la semana'),
+            content: Text('Por favor selecciona al menos un día de la semana'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -106,7 +106,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
         title: _titleController.text,
         assignedTime: assignedDateTime,
         repetitionType: _repetitionType,
-        weeklyDay: _selectedWeekDay,
+        weeklyDays: _selectedWeekDays,
         monthlyDay: _selectedMonthDay,
       );
 
@@ -125,7 +125,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Selecciona el día de la semana:',
+                  'Selecciona los días de la semana:',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -136,13 +136,17 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: DayOfWeek.values.map((day) {
-                    final isSelected = _selectedWeekDay == day;
+                    final isSelected = _selectedWeekDays.contains(day);
                     return ChoiceChip(
                       label: Text(day.displayName),
                       selected: isSelected,
                       onSelected: (selected) {
                         setState(() {
-                          _selectedWeekDay = selected ? day : null;
+                          if (selected) {
+                            _selectedWeekDays.add(day);
+                          } else {
+                            _selectedWeekDays.remove(day);
+                          }
                         });
                       },
                       selectedColor: const Color(0xFF8B5CF6),
@@ -279,7 +283,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                         _repetitionType = value!;
                         // Limpiar selecciones previas si cambia el tipo
                         if (_repetitionType != RepetitionType.weekly) {
-                          _selectedWeekDay = null;
+                          _selectedWeekDays = [];
                         }
                         if (_repetitionType != RepetitionType.monthly) {
                           _selectedMonthDay = null;
