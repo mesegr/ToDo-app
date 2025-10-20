@@ -73,6 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
       // Si la alarma debería haber sonado en los últimos 60 segundos
       if (difference >= 0 && difference <= 60) {
         _shownAlarms.add(task.id);
+        
+        // DISPARAR ALARMA EXTREMA CON 10 NOTIFICACIONES
+        NotificationService().fireExtremeAlarm(task.id, task.title);
+        
+        // Mostrar pantalla de alarma
         _showAlarmScreen(task.id);
         break; // Solo mostrar una alarma a la vez
       }
@@ -221,24 +226,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Método para eliminar tarea cuando se descarta la alarma (solo para tareas no repetitivas)
   void _dismissAlarm(String taskId) async {
-    final task = tasks.firstWhere((t) => t.id == taskId);
+    try {
+      final task = tasks.firstWhere((t) => t.id == taskId);
 
-    if (task.repetitionType == RepetitionType.none) {
-      setState(() {
-        tasks.removeWhere((t) => t.id == taskId);
-      });
+      if (task.repetitionType == RepetitionType.none) {
+        setState(() {
+          tasks.removeWhere((t) => t.id == taskId);
+        });
 
-      await _saveTasks();
+        await _saveTasks();
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Tarea "${task.title}" completada y eliminada'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Tarea "${task.title}" completada y eliminada'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       }
+    } catch (e) {
+      // La tarea ya no existe (probablemente fue eliminada)
+      debugPrint('⚠️ Tarea $taskId no encontrada al descartar alarma');
     }
   }
 

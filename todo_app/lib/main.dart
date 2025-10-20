@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:workmanager/workmanager.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
+import 'services/alarm_worker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar Workmanager para alarmas en segundo plano
+  await Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: false,
+  );
 
   // Inicializar el servicio de notificaciones
   await NotificationService().initialize();

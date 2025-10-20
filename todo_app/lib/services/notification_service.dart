@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:workmanager/workmanager.dart';
 import '../models/task.dart';
 import '../models/repetition_type.dart';
 
@@ -171,7 +172,25 @@ class NotificationService {
       if (scheduledDate.isAfter(tz.TZDateTime.now(tz.local))) {
         print('✅ Programando notificación única...');
 
-        // Programar SOLO con notificaciones locales (más confiable y sin problemas con MIUI)
+        // Calcular el delay en segundos para el Worker
+        final now = DateTime.now();
+        final delay = task.assignedTime.difference(now);
+        
+        // Programar Worker para que se ejecute en el momento exacto
+        // Esto funciona incluso con la app cerrada
+        await Workmanager().registerOneOffTask(
+          'alarm_${task.id}',
+          'alarmTask',
+          initialDelay: delay,
+          inputData: {
+            'taskId': task.id,
+            'taskTitle': task.title,
+          },
+        );
+        
+        print('✅ Worker programado para ejecutarse en ${delay.inSeconds} segundos');
+
+        // También programar con notificaciones locales como respaldo
         try {
           await _notifications.zonedSchedule(
             notificationId,
@@ -339,7 +358,11 @@ class NotificationService {
   Future<void> cancelNotification(String taskId) async {
     final notificationId = taskId.hashCode;
 
-    // Cancelar solo la notificación local
+    // Cancelar Worker
+    await Workmanager().cancelByUniqueName('alarm_$taskId');
+    print('🚫 Cancelado Worker para tarea: $taskId');
+
+    // Cancelar la notificación principal
     await _notifications.cancel(notificationId);
     print('🚫 Cancelada notificación ID: $notificationId');
 
@@ -347,6 +370,42 @@ class NotificationService {
     for (int i = 0; i < 7; i++) {
       await _notifications.cancel(notificationId + i);
     }
+  }
+
+  // Método para disparar alarma EXTREMA con 1 notificación
+  Future<void> fireExtremeAlarm(String taskId, String taskTitle) async {
+    print('🔥🔥🔥 DISPARANDO ALARMA EXTREMA PARA: $taskTitle');
+    
+    final notificationId = taskId.hashCode;
+    
+    // Detalles ultra-agresivos
+    const androidDetails = AndroidNotificationDetails(
+      'extreme_alarms',
+      'Alarmas Extremas',
+      channelDescription: 'Alarmas imposibles de ignorar',
+      importance: Importance.max,
+      priority: Priority.max,
+      enableVibration: true,
+      playSound: false,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
+      ongoing: true, // No se puede deslizar
+      autoCancel: false,
+    );
+
+    const details = NotificationDetails(android: androidDetails);
+
+    // DISPARAR 1 NOTIFICACIÓN DE MÁXIMA PRIORIDAD
+    await _notifications.show(
+      notificationId,
+      '⏰ ALARMA: $taskTitle',
+      '🔴 TOCA PARA DETENER LA VIBRACIÓN',
+      details,
+      payload: taskId,
+    );
+    
+    print('✅ Notificación extrema disparada!');
   }
 
   Future<void> cancelAllNotifications() async {
