@@ -57,4 +57,32 @@ class Task {
         return 'Mensual';
     }
   }
+
+  // Serialización a JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'assignedTime': assignedTime.toIso8601String(),
+      'isCompleted': isCompleted,
+      'repetitionType': repetitionType.index,
+      'weeklyDay': weeklyDay?.index,
+      'monthlyDay': monthlyDay,
+    };
+  }
+
+  // Deserialización desde JSON
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      assignedTime: DateTime.parse(json['assignedTime'] as String),
+      isCompleted: json['isCompleted'] as bool? ?? false,
+      repetitionType: RepetitionType.values[json['repetitionType'] as int? ?? 0],
+      weeklyDay: json['weeklyDay'] != null 
+          ? DayOfWeek.values[json['weeklyDay'] as int]
+          : null,
+      monthlyDay: json['monthlyDay'] as int?,
+    );
+  }
 }

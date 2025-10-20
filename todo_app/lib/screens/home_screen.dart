@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
 import '../models/repetition_type.dart';
 import '../widgets/task_card.dart';
@@ -19,6 +21,37 @@ class _HomeScreenState extends State<HomeScreen> {
   // Índice de la pestaña seleccionada
   int _selectedIndex = 0;
 
+  // Clave para SharedPreferences
+  static const String _tasksKey = 'tasks';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  // Cargar tareas desde SharedPreferences
+  Future<void> _loadTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? tasksJson = prefs.getString(_tasksKey);
+    
+    if (tasksJson != null) {
+      final List<dynamic> tasksList = json.decode(tasksJson);
+      setState(() {
+        tasks = tasksList.map((taskJson) => Task.fromJson(taskJson)).toList();
+        tasks.sort((a, b) => a.assignedTime.compareTo(b.assignedTime));
+      });
+    }
+  }
+
+  // Guardar tareas en SharedPreferences
+  Future<void> _saveTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<Map<String, dynamic>> tasksJson = 
+        tasks.map((task) => task.toJson()).toList();
+    await prefs.setString(_tasksKey, json.encode(tasksJson));
+  }
+
   Future<void> _addTask() async {
     final Task? newTask = await Navigator.push(
       context,
@@ -33,6 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
         // Ordenar tareas por fecha/hora
         tasks.sort((a, b) => a.assignedTime.compareTo(b.assignedTime));
       });
+
+      // Guardar cambios
+      await _saveTasks();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,6 +100,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       });
 
+      // Guardar cambios
+      await _saveTasks();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -76,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _deleteTask(Task task) {
+  void _deleteTask(Task task) async {
     // Guardar la tarea por si el usuario quiere deshacer
     final deletedTask = task;
     final deletedIndex = tasks.indexOf(task);
@@ -85,22 +124,29 @@ class _HomeScreenState extends State<HomeScreen> {
       tasks.remove(task);
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Tarea "${task.title}" eliminada'),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Deshacer',
-          textColor: Colors.white,
-          onPressed: () {
-            setState(() {
-              tasks.insert(deletedIndex, deletedTask);
-            });
-          },
+    // Guardar cambios
+    await _saveTasks();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Tarea "${task.title}" eliminada'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Deshacer',
+            textColor: Colors.white,
+            onPressed: () async {
+              setState(() {
+                tasks.insert(deletedIndex, deletedTask);
+              });
+              // Guardar de nuevo al deshacer
+              await _saveTasks();
+            },
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   // Filtrar tareas según la pestaña seleccionada
