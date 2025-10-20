@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
-import '../models/repetition_type.dart';
 import '../widgets/task_card.dart';
 import 'add_task_screen.dart';
 import 'edit_task_screen.dart';
@@ -13,26 +12,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Lista de tareas de ejemplo
-  List<Task> tasks = [
-    Task(
-      id: '1',
-      title: 'Completar proyecto Flutter',
-      assignedTime: DateTime.now(),
-    ),
-    Task(
-      id: '2',
-      title: 'Revisar correos',
-      assignedTime: DateTime.now().add(const Duration(hours: 2)),
-    ),
-    Task(
-      id: '3',
-      title: 'Reunión con el equipo',
-      assignedTime: DateTime.now().add(const Duration(hours: 4)),
-      repetitionType: RepetitionType.weekly,
-      weeklyDay: DayOfWeek.saturday,
-    ),
-  ];
+  // Lista de tareas (inicialmente vacía)
+  List<Task> tasks = [];
 
   Future<void> _addTask() async {
     final Task? newTask = await Navigator.push(
@@ -53,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Tarea "${newTask.title}" añadida'),
-            backgroundColor: Colors.green,
+            backgroundColor: const Color(0xFF8B5CF6),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -83,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Tarea "${updatedTask.title}" actualizada'),
-            backgroundColor: Colors.blue,
+            backgroundColor: const Color(0xFF8B5CF6),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -123,9 +104,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis Tareas'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        elevation: 2,
       ),
       body: tasks.isEmpty
           ? Center(
@@ -135,14 +113,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     Icons.task_alt,
                     size: 100,
-                    color: Colors.grey[400],
+                    color: Colors.grey[600],
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No hay tareas',
                     style: TextStyle(
                       fontSize: 20,
-                      color: Colors.grey[600],
+                      color: Colors.grey[300],
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -150,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Presiona el botón + para añadir una tarea',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[500],
+                      color: Colors.grey[400],
                     ),
                   ),
                 ],
@@ -203,8 +181,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addTask,
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
     );

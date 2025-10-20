@@ -42,12 +42,12 @@ class TaskCard extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: const Color(0xFF8B5CF6).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.assignment_outlined,
-                  color: Colors.blue,
+                  color: Color(0xFF8B5CF6),
                   size: 28,
                 ),
               ),
@@ -62,7 +62,7 @@ class TaskCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 8),

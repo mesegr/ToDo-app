@@ -129,9 +129,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           _selectedWeekDay = selected ? day : null;
                         });
                       },
-                      selectedColor: Colors.blue,
+                      selectedColor: const Color(0xFF8B5CF6),
                       labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
+                        color: isSelected ? Colors.white : Colors.white70,
                       ),
                     );
                   }).toList(),
@@ -190,9 +190,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Añadir Tarea'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        elevation: 2,
       ),
       body: Form(
         key: _formKey,
@@ -224,7 +221,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             // Selector de fecha
             Card(
               child: ListTile(
-                leading: const Icon(Icons.calendar_today, color: Colors.blue),
+                leading: const Icon(Icons.calendar_today, color: Color(0xFF8B5CF6)),
                 title: const Text('Fecha'),
                 subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -236,7 +233,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             // Selector de hora
             Card(
               child: ListTile(
-                leading: const Icon(Icons.access_time, color: Colors.blue),
+                leading: const Icon(Icons.access_time, color: Color(0xFF8B5CF6)),
                 title: const Text('Hora'),
                 subtitle: Text(_selectedTime.format(context)),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -269,7 +266,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         _selectedMonthDay = null;
                       });
                     },
-                    activeColor: Colors.blue,
+                    activeColor: const Color(0xFF8B5CF6),
                   );
                 }).toList(),
               ),
@@ -284,8 +281,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ElevatedButton(
               onPressed: _saveTask,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
