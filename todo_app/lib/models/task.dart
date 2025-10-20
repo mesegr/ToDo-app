@@ -100,7 +100,8 @@ class Task {
       title: json['title'] as String,
       assignedTime: DateTime.parse(json['assignedTime'] as String),
       isCompleted: json['isCompleted'] as bool? ?? false,
-      repetitionType: RepetitionType.values[json['repetitionType'] as int? ?? 0],
+      repetitionType:
+          RepetitionType.values[json['repetitionType'] as int? ?? 0],
       weeklyDays: weeklyDaysList,
       monthlyDay: json['monthlyDay'] as int?,
     );

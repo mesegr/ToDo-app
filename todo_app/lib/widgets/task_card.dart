@@ -6,11 +6,7 @@ class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback? onTap;
 
-  const TaskCard({
-    super.key,
-    required this.task,
-    this.onTap,
-  });
+  const TaskCard({super.key, required this.task, this.onTap});
 
   String _formatTime(DateTime dateTime) {
     return DateFormat('HH:mm').format(dateTime);
@@ -23,13 +19,11 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repetitionDesc = task.getRepetitionDescription();
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -109,11 +103,7 @@ class TaskCard extends StatelessWidget {
                 ),
               ),
               // Icono de editar
-              Icon(
-                Icons.edit_outlined,
-                size: 20,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.edit_outlined, size: 20, color: Colors.grey[400]),
             ],
           ),
         ),

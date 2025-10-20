@@ -13,7 +13,7 @@ class AddTaskScreen extends StatefulWidget {
 class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   RepetitionType _repetitionType = RepetitionType.none;
@@ -64,7 +64,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       );
 
       // Validar que si es semanal, tenga un día seleccionado
-      if (_repetitionType == RepetitionType.weekly && _selectedWeekDays.isEmpty) {
+      if (_repetitionType == RepetitionType.weekly &&
+          _selectedWeekDays.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Por favor selecciona al menos un día de la semana'),
@@ -75,7 +76,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       }
 
       // Validar que si es mensual, tenga un día del mes seleccionado
-      if (_repetitionType == RepetitionType.monthly && _selectedMonthDay == null) {
+      if (_repetitionType == RepetitionType.monthly &&
+          _selectedMonthDay == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Por favor selecciona un día del mes'),
@@ -110,35 +112,33 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               children: [
                 const Text(
                   'Selecciona los días de la semana:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: DayOfWeek.values.map((day) {
-                    final isSelected = _selectedWeekDays.contains(day);
-                    return ChoiceChip(
-                      label: Text(day.displayName),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedWeekDays.add(day);
-                          } else {
-                            _selectedWeekDays.remove(day);
-                          }
-                        });
-                      },
-                      selectedColor: const Color(0xFF8B5CF6),
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
-                      ),
-                    );
-                  }).toList(),
+                  children:
+                      DayOfWeek.values.map((day) {
+                        final isSelected = _selectedWeekDays.contains(day);
+                        return ChoiceChip(
+                          label: Text(day.displayName),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedWeekDays.add(day);
+                              } else {
+                                _selectedWeekDays.remove(day);
+                              }
+                            });
+                          },
+                          selectedColor: const Color(0xFF8B5CF6),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.white70,
+                          ),
+                        );
+                      }).toList(),
                 ),
               ],
             ),
@@ -154,17 +154,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               children: [
                 const Text(
                   'Selecciona el día del mes:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
-                  value: _selectedMonthDay,
+                  initialValue: _selectedMonthDay,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                   hint: const Text('Selecciona un día'),
                   items: List.generate(31, (index) {
@@ -192,9 +192,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Añadir Tarea'),
-      ),
+      appBar: AppBar(title: const Text('Añadir Tarea')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -225,7 +223,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             // Selector de fecha
             Card(
               child: ListTile(
-                leading: const Icon(Icons.calendar_today, color: Color(0xFF8B5CF6)),
+                leading: const Icon(
+                  Icons.calendar_today,
+                  color: Color(0xFF8B5CF6),
+                ),
                 title: const Text('Fecha'),
                 subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -237,7 +238,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             // Selector de hora
             Card(
               child: ListTile(
-                leading: const Icon(Icons.access_time, color: Color(0xFF8B5CF6)),
+                leading: const Icon(
+                  Icons.access_time,
+                  color: Color(0xFF8B5CF6),
+                ),
                 title: const Text('Hora'),
                 subtitle: Text(_selectedTime.format(context)),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -249,30 +253,28 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             // Selector de tipo de repetición
             const Text(
               'Repetición',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Card(
               child: Column(
-                children: RepetitionType.values.map((type) {
-                  return RadioListTile<RepetitionType>(
-                    title: Text(type.displayName),
-                    value: type,
-                    groupValue: _repetitionType,
-                    onChanged: (RepetitionType? value) {
-                      setState(() {
-                        _repetitionType = value!;
-                        // Limpiar selecciones previas
-                        _selectedWeekDays = [];
-                        _selectedMonthDay = null;
-                      });
-                    },
-                    activeColor: const Color(0xFF8B5CF6),
-                  );
-                }).toList(),
+                children:
+                    RepetitionType.values.map((type) {
+                      return RadioListTile<RepetitionType>(
+                        title: Text(type.displayName),
+                        value: type,
+                        groupValue: _repetitionType,
+                        onChanged: (RepetitionType? value) {
+                          setState(() {
+                            _repetitionType = value!;
+                            // Limpiar selecciones previas
+                            _selectedWeekDays = [];
+                            _selectedMonthDay = null;
+                          });
+                        },
+                        activeColor: const Color(0xFF8B5CF6),
+                      );
+                    }).toList(),
               ),
             ),
 
@@ -292,10 +294,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               child: const Text(
                 'Guardar Tarea',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],

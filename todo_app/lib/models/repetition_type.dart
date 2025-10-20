@@ -1,9 +1,4 @@
-enum RepetitionType {
-  none,
-  daily,
-  weekly,
-  monthly,
-}
+enum RepetitionType { none, daily, weekly, monthly }
 
 extension RepetitionTypeExtension on RepetitionType {
   String get displayName {

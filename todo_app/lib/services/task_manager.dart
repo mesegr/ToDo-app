@@ -6,11 +6,11 @@ class TaskManager {
   TaskManager._internal();
 
   List<Task> _tasks = [];
-  
+
   void setTasks(List<Task> tasks) {
     _tasks = tasks;
   }
-  
+
   Task? getTaskById(String id) {
     try {
       return _tasks.firstWhere((task) => task.id == id);
@@ -18,6 +18,6 @@ class TaskManager {
       return null;
     }
   }
-  
+
   List<Task> get tasks => _tasks;
 }
