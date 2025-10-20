@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
+import '../models/repetition_type.dart';
 import '../widgets/task_card.dart';
 import 'add_task_screen.dart';
 import 'edit_task_screen.dart';
@@ -14,6 +15,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // Lista de tareas (inicialmente vacía)
   List<Task> tasks = [];
+  
+  // Índice de la pestaña seleccionada
+  int _selectedIndex = 0;
 
   Future<void> _addTask() async {
     final Task? newTask = await Navigator.push(
@@ -99,13 +103,79 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Filtrar tareas según la pestaña seleccionada
+  List<Task> _getFilteredTasks() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    List<Task> filtered;
+
+    switch (_selectedIndex) {
+      case 0: // Hoy
+        filtered = tasks.where((task) {
+          final taskDate = DateTime(
+            task.assignedTime.year,
+            task.assignedTime.month,
+            task.assignedTime.day,
+          );
+          return taskDate.isAtSameMomentAs(today) && 
+                 task.repetitionType == RepetitionType.none;
+        }).toList();
+        break;
+      case 1: // Otros días
+        filtered = tasks.where((task) {
+          final taskDate = DateTime(
+            task.assignedTime.year,
+            task.assignedTime.month,
+            task.assignedTime.day,
+          );
+          return taskDate.isAfter(today) && 
+                 task.repetitionType == RepetitionType.none;
+        }).toList();
+        break;
+      case 2: // Repetitivas
+        filtered = tasks.where((task) {
+          return task.repetitionType != RepetitionType.none;
+        }).toList();
+        break;
+      default:
+        filtered = tasks;
+    }
+
+    // Ordenar por fecha y hora
+    filtered.sort((a, b) => a.assignedTime.compareTo(b.assignedTime));
+    return filtered;
+  }
+
+  String _getEmptyMessage() {
+    switch (_selectedIndex) {
+      case 0:
+        return 'No hay tareas para hoy';
+      case 1:
+        return 'No hay tareas programadas';
+      case 2:
+        return 'No hay tareas repetitivas';
+      default:
+        return 'No hay tareas';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final filteredTasks = _getFilteredTasks();
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis Tareas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add,size: 40,),
+            onPressed: _addTask,
+            tooltip: 'Añadir tarea',
+          ),
+        ],
       ),
-      body: tasks.isEmpty
+      body: filteredTasks.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -117,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No hay tareas',
+                    _getEmptyMessage(),
                     style: TextStyle(
                       fontSize: 20,
                       color: Colors.grey[300],
@@ -136,9 +206,9 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: tasks.length,
+              itemCount: filteredTasks.length,
               itemBuilder: (context, index) {
-                final task = tasks[index];
+                final task = filteredTasks[index];
                 return Dismissible(
                   key: Key(task.id),
                   direction: DismissDirection.endToStart,
@@ -179,9 +249,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addTask,
-        child: const Icon(Icons.add),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        backgroundColor: const Color(0xFF2A2438),
+        selectedItemColor: const Color(0xFF8B5CF6),
+        unselectedItemColor: Colors.grey[500],
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.today),
+            label: 'Hoy',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_month),
+            label: 'Otros días',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.repeat),
+            label: 'Repetitivas',
+          ),
+        ],
       ),
     );
   }
