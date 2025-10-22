@@ -103,9 +103,7 @@ class TaskCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          task.hasAlarm
-                            ? '${_formatTime(task.assignedTime)} - ${_formatDate(task.assignedTime)}'
-                            : _formatDate(task.assignedTime),
+                          '${_formatTime(task.assignedTime)} - ${_formatDate(task.assignedTime)}',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],

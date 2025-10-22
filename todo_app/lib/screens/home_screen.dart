@@ -34,6 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // Set para rastrear alarmas ya mostradas
   final Set<String> _shownAlarms = {};
 
+  // Variables para el sistema de filtros
+  String _sortOrder = 'asc'; // 'asc' o 'desc'
+  String? _filterByDay; // null, 'today', 'tomorrow', 'week', 'month'
+  bool _showFilterMenu = false;
+
   @override
   void initState() {
     super.initState();
@@ -300,11 +305,14 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Task> _getFilteredTasks() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final nextWeek = today.add(const Duration(days: 7));
+    final nextMonth = today.add(const Duration(days: 30));
 
     List<Task> filtered;
 
     switch (_selectedIndex) {
-      case 0: // Pendientes (sin alarma)
+      case 0: // Pendientes (mostrar todas, incluso sin alarma)
         filtered = tasks.where((task) => !task.hasAlarm).toList();
         break;
       case 1: // Hoy
@@ -343,8 +351,38 @@ class _HomeScreenState extends State<HomeScreen> {
         filtered = tasks;
     }
 
+    // Aplicar filtro por día si está activo
+    if (_filterByDay != null) {
+      filtered = filtered.where((task) {
+        final taskDate = DateTime(
+          task.assignedTime.year,
+          task.assignedTime.month,
+          task.assignedTime.day,
+        );
+
+        switch (_filterByDay) {
+          case 'today':
+            return taskDate.isAtSameMomentAs(today);
+          case 'tomorrow':
+            return taskDate.isAtSameMomentAs(tomorrow);
+          case 'week':
+            return taskDate.isAfter(today) && taskDate.isBefore(nextWeek);
+          case 'month':
+            return taskDate.isAfter(today) && taskDate.isBefore(nextMonth);
+          default:
+            return true;
+        }
+      }).toList();
+    }
+
     // Ordenar por fecha y hora
-    filtered.sort((a, b) => a.assignedTime.compareTo(b.assignedTime));
+    filtered.sort((a, b) {
+      if (_sortOrder == 'desc') {
+        return b.assignedTime.compareTo(a.assignedTime);
+      }
+      return a.assignedTime.compareTo(b.assignedTime);
+    });
+    
     return filtered;
   }
 
@@ -363,6 +401,36 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Widget para los chips de filtro
+  Widget _buildFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF3D3350),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey[700]!,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey[400],
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredTasks = _getFilteredTasks();
@@ -371,6 +439,19 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Mis Tareas'),
         actions: [
+          // Botón de filtros
+          IconButton(
+            icon: Icon(
+              _showFilterMenu ? Icons.filter_alt : Icons.filter_alt_outlined,
+              size: 28,
+            ),
+            onPressed: () {
+              setState(() {
+                _showFilterMenu = !_showFilterMenu;
+              });
+            },
+            tooltip: 'Filtros',
+          ),
           IconButton(
             icon: const Icon(Icons.add, size: 40),
             onPressed: _addTask,
@@ -378,8 +459,137 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body:
-          filteredTasks.isEmpty
+      body: Column(
+        children: [
+          // Panel de filtros desplegable
+          if (_showFilterMenu)
+            Container(
+              color: const Color(0xFF2D2640),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Orden
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.sort, color: Colors.white70, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Orden:',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildFilterChip(
+                              label: 'Más reciente primero',
+                              isSelected: _sortOrder == 'asc',
+                              onTap: () {
+                                setState(() {
+                                  _sortOrder = 'asc';
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            _buildFilterChip(
+                              label: 'Más antiguo primero',
+                              isSelected: _sortOrder == 'desc',
+                              onTap: () {
+                                setState(() {
+                                  _sortOrder = 'desc';
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Filtro por día
+                  Row(
+                    children: [
+                      const Icon(Icons.date_range, color: Colors.white70, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Período:',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildFilterChip(
+                        label: 'Todas',
+                        isSelected: _filterByDay == null,
+                        onTap: () {
+                          setState(() {
+                            _filterByDay = null;
+                          });
+                        },
+                      ),
+                      _buildFilterChip(
+                        label: 'Hoy',
+                        isSelected: _filterByDay == 'today',
+                        onTap: () {
+                          setState(() {
+                            _filterByDay = 'today';
+                          });
+                        },
+                      ),
+                      _buildFilterChip(
+                        label: 'Mañana',
+                        isSelected: _filterByDay == 'tomorrow',
+                        onTap: () {
+                          setState(() {
+                            _filterByDay = 'tomorrow';
+                          });
+                        },
+                      ),
+                      _buildFilterChip(
+                        label: 'Esta semana',
+                        isSelected: _filterByDay == 'week',
+                        onTap: () {
+                          setState(() {
+                            _filterByDay = 'week';
+                          });
+                        },
+                      ),
+                      _buildFilterChip(
+                        label: 'Este mes',
+                        isSelected: _filterByDay == 'month',
+                        onTap: () {
+                          setState(() {
+                            _filterByDay = 'month';
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          // Lista de tareas
+          Expanded(
+            child: filteredTasks.isEmpty
               ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -440,6 +650,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
+          ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
