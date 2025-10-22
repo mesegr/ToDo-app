@@ -6,6 +6,7 @@ import '../models/task.dart';
 import '../models/repetition_type.dart';
 import '../widgets/task_card.dart';
 import '../services/notification_service.dart';
+import '../services/widget_service.dart';
 import '../helpers/miui_permissions_helper.dart';
 import 'add_task_screen.dart';
 import 'edit_task_screen.dart';
@@ -126,6 +127,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final List<Map<String, dynamic>> tasksJson =
         tasks.map((task) => task.toJson()).toList();
     await prefs.setString(_tasksKey, json.encode(tasksJson));
+    
+    // Actualizar el widget después de guardar las tareas
+    await WidgetService.updateWidget();
   }
 
   Future<void> _addTask() async {
