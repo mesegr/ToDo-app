@@ -13,6 +13,7 @@ class AddTaskScreen extends StatefulWidget {
 class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
@@ -24,6 +25,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   void dispose() {
     _titleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -94,6 +96,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       final task = Task(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: _titleController.text,
+        description: _descriptionController.text.isEmpty 
+            ? null 
+            : _descriptionController.text,
         assignedTime: assignedDateTime,
         repetitionType: _hasAlarm ? _repetitionType : RepetitionType.none,
         weeklyDays: _hasAlarm ? _selectedWeekDays : [],
@@ -221,6 +226,21 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 }
                 return null;
               },
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: 16),
+
+            // Campo de descripción (opcional)
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Descripción (opcional)',
+                hintText: 'Añade detalles sobre la tarea...',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.description),
+                alignLabelWithHint: true,
+              ),
+              maxLines: 3,
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 24),
@@ -381,6 +401,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
+            
+            // Padding inferior para que el botón nunca esté pegado al borde
+            const SizedBox(height: 32),
           ],
         ),
       ),

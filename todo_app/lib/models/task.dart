@@ -3,6 +3,7 @@ import 'repetition_type.dart';
 class Task {
   final String id;
   final String title;
+  final String? description; // Descripción opcional de la tarea
   final DateTime assignedTime;
   final bool isCompleted;
   final RepetitionType repetitionType;
@@ -13,6 +14,7 @@ class Task {
   Task({
     required this.id,
     required this.title,
+    this.description,
     required this.assignedTime,
     this.isCompleted = false,
     this.repetitionType = RepetitionType.none,
@@ -24,6 +26,7 @@ class Task {
   Task copyWith({
     String? id,
     String? title,
+    String? description,
     DateTime? assignedTime,
     bool? isCompleted,
     RepetitionType? repetitionType,
@@ -34,6 +37,7 @@ class Task {
     return Task(
       id: id ?? this.id,
       title: title ?? this.title,
+      description: description ?? this.description,
       assignedTime: assignedTime ?? this.assignedTime,
       isCompleted: isCompleted ?? this.isCompleted,
       repetitionType: repetitionType ?? this.repetitionType,
@@ -77,6 +81,7 @@ class Task {
     return {
       'id': id,
       'title': title,
+      'description': description,
       'assignedTime': assignedTime.toIso8601String(),
       'isCompleted': isCompleted,
       'repetitionType': repetitionType.index,
@@ -103,6 +108,7 @@ class Task {
     return Task(
       id: json['id'] as String,
       title: json['title'] as String,
+      description: json['description'] as String?,
       assignedTime: DateTime.parse(json['assignedTime'] as String),
       isCompleted: json['isCompleted'] as bool? ?? false,
       repetitionType:

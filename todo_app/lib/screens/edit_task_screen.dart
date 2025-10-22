@@ -15,6 +15,7 @@ class EditTaskScreen extends StatefulWidget {
 class _EditTaskScreenState extends State<EditTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
+  late TextEditingController _descriptionController;
 
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
@@ -28,6 +29,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     super.initState();
     // Inicializar con los datos de la tarea existente
     _titleController = TextEditingController(text: widget.task.title);
+    _descriptionController = TextEditingController(text: widget.task.description ?? '');
     _selectedDate = widget.task.assignedTime;
     _selectedTime = TimeOfDay.fromDateTime(widget.task.assignedTime);
     _repetitionType = widget.task.repetitionType;
@@ -39,6 +41,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   @override
   void dispose() {
     _titleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -108,6 +111,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
       final updatedTask = widget.task.copyWith(
         title: _titleController.text,
+        description: _descriptionController.text.isEmpty 
+            ? null 
+            : _descriptionController.text,
         assignedTime: assignedDateTime,
         repetitionType: _hasAlarm ? _repetitionType : RepetitionType.none,
         weeklyDays: _hasAlarm ? _selectedWeekDays : [],
@@ -235,6 +241,21 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 }
                 return null;
               },
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: 16),
+
+            // Campo de descripción (opcional)
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Descripción (opcional)',
+                hintText: 'Añade detalles sobre la tarea...',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.description),
+                alignLabelWithHint: true,
+              ),
+              maxLines: 3,
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 24),
@@ -399,6 +420,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
+            
+            // Padding inferior para que el botón nunca esté pegado al borde
+            const SizedBox(height: 32),
           ],
         ),
       ),
