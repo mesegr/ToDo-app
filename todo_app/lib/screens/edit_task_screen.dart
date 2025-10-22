@@ -21,6 +21,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   late RepetitionType _repetitionType;
   List<DayOfWeek> _selectedWeekDays = [];
   int? _selectedMonthDay;
+  late bool _hasAlarm;
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     _repetitionType = widget.task.repetitionType;
     _selectedWeekDays = List.from(widget.task.weeklyDays);
     _selectedMonthDay = widget.task.monthlyDay;
+    _hasAlarm = widget.task.hasAlarm;
   }
 
   @override
@@ -77,36 +79,40 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
         _selectedTime.minute,
       );
 
-      // Validar que si es semanal, tenga un día seleccionado
-      if (_repetitionType == RepetitionType.weekly &&
-          _selectedWeekDays.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Por favor selecciona al menos un día de la semana'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
+      // Solo validar repeticiones si tiene alarma
+      if (_hasAlarm) {
+        // Validar que si es semanal, tenga un día seleccionado
+        if (_repetitionType == RepetitionType.weekly &&
+            _selectedWeekDays.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Por favor selecciona al menos un día de la semana'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
 
-      // Validar que si es mensual, tenga un día del mes seleccionado
-      if (_repetitionType == RepetitionType.monthly &&
-          _selectedMonthDay == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Por favor selecciona un día del mes'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
+        // Validar que si es mensual, tenga un día del mes seleccionado
+        if (_repetitionType == RepetitionType.monthly &&
+            _selectedMonthDay == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Por favor selecciona un día del mes'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
       }
 
       final updatedTask = widget.task.copyWith(
         title: _titleController.text,
         assignedTime: assignedDateTime,
-        repetitionType: _repetitionType,
-        weeklyDays: _selectedWeekDays,
-        monthlyDay: _selectedMonthDay,
+        repetitionType: _hasAlarm ? _repetitionType : RepetitionType.none,
+        weeklyDays: _hasAlarm ? _selectedWeekDays : [],
+        monthlyDay: _hasAlarm ? _selectedMonthDay : null,
+        hasAlarm: _hasAlarm,
       );
 
       Navigator.pop(context, updatedTask);
@@ -171,7 +177,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
-                  initialValue: _selectedMonthDay,
+                  value: _selectedMonthDay,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
@@ -263,40 +269,119 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Selector de tipo de repetición
-            const Text(
-              'Repetición',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
+            // Switch para activar/desactivar alarma
             Card(
-              child: Column(
-                children:
-                    RepetitionType.values.map((type) {
-                      return RadioListTile<RepetitionType>(
-                        title: Text(type.displayName),
-                        value: type,
-                        groupValue: _repetitionType,
-                        onChanged: (RepetitionType? value) {
-                          setState(() {
-                            _repetitionType = value!;
-                            // Limpiar selecciones previas si cambia el tipo
-                            if (_repetitionType != RepetitionType.weekly) {
-                              _selectedWeekDays = [];
-                            }
-                            if (_repetitionType != RepetitionType.monthly) {
-                              _selectedMonthDay = null;
-                            }
-                          });
-                        },
-                        activeColor: const Color(0xFF8B5CF6),
-                      );
-                    }).toList(),
+              child: SwitchListTile(
+                title: const Text('Configurar alarma'),
+                subtitle: Text(
+                  _hasAlarm 
+                    ? 'Esta tarea tendrá recordatorio' 
+                    : 'Esta tarea es solo un pendiente',
+                ),
+                value: _hasAlarm,
+                onChanged: (bool value) {
+                  setState(() {
+                    _hasAlarm = value;
+                    if (!_hasAlarm) {
+                      // Si se desactiva la alarma, limpiar repeticiones
+                      _repetitionType = RepetitionType.none;
+                      _selectedWeekDays = [];
+                      _selectedMonthDay = null;
+                    }
+                  });
+                },
+                activeColor: const Color(0xFF8B5CF6),
+                secondary: Icon(
+                  _hasAlarm ? Icons.notifications_active : Icons.check_box,
+                  color: const Color(0xFF8B5CF6),
+                ),
               ),
             ),
 
-            // Opciones adicionales según el tipo de repetición
-            _buildRepetitionOptions(),
+            // Mostrar opciones de fecha/hora/repetición solo si tiene alarma
+            if (_hasAlarm) ...[
+              const SizedBox(height: 12),
+
+              // Selector de fecha
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.calendar_today,
+                    color: Color(0xFF8B5CF6),
+                  ),
+                  title: const Text('Fecha'),
+                  subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => _selectDate(context),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Selector de hora
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.access_time,
+                    color: Color(0xFF8B5CF6),
+                  ),
+                  title: const Text('Hora'),
+                  subtitle: Text(_selectedTime.format(context)),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => _selectTime(context),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Selector de tipo de repetición
+              const Text(
+                'Repetición',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: Column(
+                  children:
+                      RepetitionType.values.map((type) {
+                        return RadioListTile<RepetitionType>(
+                          title: Text(type.displayName),
+                          value: type,
+                          groupValue: _repetitionType,
+                          onChanged: (RepetitionType? value) {
+                            setState(() {
+                              _repetitionType = value!;
+                              // Limpiar selecciones previas si cambia el tipo
+                              if (_repetitionType != RepetitionType.weekly) {
+                                _selectedWeekDays = [];
+                              }
+                              if (_repetitionType != RepetitionType.monthly) {
+                                _selectedMonthDay = null;
+                              }
+                            });
+                          },
+                          activeColor: const Color(0xFF8B5CF6),
+                        );
+                      }).toList(),
+                ),
+              ),
+
+              // Opciones adicionales según el tipo de repetición
+              _buildRepetitionOptions(),
+            ] else ...[
+              // Si no tiene alarma, mostrar selector de fecha simple
+              const SizedBox(height: 12),
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.calendar_today,
+                    color: Color(0xFF8B5CF6),
+                  ),
+                  title: const Text('Fecha límite (opcional)'),
+                  subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => _selectDate(context),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 24),
 

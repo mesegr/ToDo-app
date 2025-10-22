@@ -8,6 +8,7 @@ class Task {
   final RepetitionType repetitionType;
   final List<DayOfWeek> weeklyDays; // Para tareas semanales (múltiples días)
   final int? monthlyDay; // Para tareas mensuales (día del mes)
+  final bool hasAlarm; // Indica si la tarea tiene alarma o es solo un to-do
 
   Task({
     required this.id,
@@ -17,6 +18,7 @@ class Task {
     this.repetitionType = RepetitionType.none,
     this.weeklyDays = const [],
     this.monthlyDay,
+    this.hasAlarm = true, // Por defecto tiene alarma (retrocompatibilidad)
   });
 
   Task copyWith({
@@ -27,6 +29,7 @@ class Task {
     RepetitionType? repetitionType,
     List<DayOfWeek>? weeklyDays,
     int? monthlyDay,
+    bool? hasAlarm,
   }) {
     return Task(
       id: id ?? this.id,
@@ -36,6 +39,7 @@ class Task {
       repetitionType: repetitionType ?? this.repetitionType,
       weeklyDays: weeklyDays ?? this.weeklyDays,
       monthlyDay: monthlyDay ?? this.monthlyDay,
+      hasAlarm: hasAlarm ?? this.hasAlarm,
     );
   }
 
@@ -78,6 +82,7 @@ class Task {
       'repetitionType': repetitionType.index,
       'weeklyDays': weeklyDays.map((day) => day.index).toList(),
       'monthlyDay': monthlyDay,
+      'hasAlarm': hasAlarm,
     };
   }
 
@@ -104,6 +109,7 @@ class Task {
           RepetitionType.values[json['repetitionType'] as int? ?? 0],
       weeklyDays: weeklyDaysList,
       monthlyDay: json['monthlyDay'] as int?,
+      hasAlarm: json['hasAlarm'] as bool? ?? true, // Por defecto true para retrocompatibilidad
     );
   }
 }

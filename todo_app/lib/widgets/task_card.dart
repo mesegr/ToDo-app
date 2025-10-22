@@ -5,8 +5,14 @@ import '../models/task.dart';
 class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback? onTap;
+  final Function(bool)? onToggleComplete;
 
-  const TaskCard({super.key, required this.task, this.onTap});
+  const TaskCard({
+    super.key, 
+    required this.task, 
+    this.onTap,
+    this.onToggleComplete,
+  });
 
   String _formatTime(DateTime dateTime) {
     return DateFormat('HH:mm').format(dateTime);
@@ -31,20 +37,44 @@ class TaskCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Icono decorativo de tarea
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
+              // Icono de tarea para tareas sin alarma, icono de notificación para tareas con alarma
+              if (!task.hasAlarm)
+                GestureDetector(
+                  onTap: () => onToggleComplete?.call(!task.isCompleted),
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: task.isCompleted 
+                        ? Colors.green.withOpacity(0.2)
+                        : const Color(0xFF8B5CF6).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      task.isCompleted
+                        ? Icons.task_alt
+                        : Icons.assignment_outlined,
+                      color: task.isCompleted
+                        ? Colors.green
+                        : const Color(0xFF8B5CF6),
+                      size: 28,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.notifications_active,
+                    color: Color(0xFF8B5CF6),
+                    size: 28,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.assignment_outlined,
-                  color: Color(0xFF8B5CF6),
-                  size: 28,
-                ),
-              ),
               const SizedBox(width: 16),
               // Información de la tarea
               Expanded(
@@ -53,23 +83,29 @@ class TaskCard extends StatelessWidget {
                   children: [
                     Text(
                       task.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        decoration: task.isCompleted && !task.hasAlarm
+                          ? TextDecoration.lineThrough
+                          : null,
+                        decorationColor: Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(
-                          Icons.access_time,
+                          task.hasAlarm ? Icons.access_time : Icons.calendar_today,
                           size: 16,
                           color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${_formatTime(task.assignedTime)} - ${_formatDate(task.assignedTime)}',
+                          task.hasAlarm
+                            ? '${_formatTime(task.assignedTime)} - ${_formatDate(task.assignedTime)}'
+                            : _formatDate(task.assignedTime),
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -77,8 +113,8 @@ class TaskCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // Mostrar indicador de repetición
-                    if (repetitionDesc.isNotEmpty) ...[
+                    // Mostrar indicador de repetición solo para tareas con alarma
+                    if (task.hasAlarm && repetitionDesc.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Row(
                         children: [

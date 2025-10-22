@@ -64,6 +64,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final now = DateTime.now();
     
     for (final task in tasks) {
+      // Solo verificar tareas que tienen alarma activada
+      if (!task.hasAlarm) continue;
+      
       // Saltar si ya se mostró esta alarma
       if (_shownAlarms.contains(task.id)) continue;
       
@@ -136,13 +139,19 @@ class _HomeScreenState extends State<HomeScreen> {
       // Guardar cambios
       await _saveTasks();
 
-      // Programar la notificación
-      await NotificationService().scheduleNotification(newTask);
+      // Programar la notificación solo si la tarea tiene alarma
+      if (newTask.hasAlarm) {
+        await NotificationService().scheduleNotification(newTask);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Tarea "${newTask.title}" añadida'),
+            content: Text(
+              newTask.hasAlarm
+                ? 'Tarea "${newTask.title}" añadida'
+                : 'Pendiente "${newTask.title}" creado',
+            ),
             backgroundColor: const Color(0xFF8B5CF6),
             duration: const Duration(seconds: 2),
           ),
@@ -170,8 +179,13 @@ class _HomeScreenState extends State<HomeScreen> {
       // Guardar cambios
       await _saveTasks();
 
-      // Re-programar la notificación con los nuevos datos
-      await NotificationService().scheduleNotification(updatedTask);
+      // Re-programar la notificación con los nuevos datos solo si tiene alarma
+      if (updatedTask.hasAlarm) {
+        await NotificationService().scheduleNotification(updatedTask);
+      } else {
+        // Si se desactivó la alarma, cancelar cualquier notificación existente
+        await NotificationService().cancelNotification(updatedTask.id);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -197,8 +211,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // Guardar cambios
     await _saveTasks();
 
-    // Cancelar la notificación
-    await NotificationService().cancelNotification(task.id);
+    // Cancelar la notificación solo si tenía alarma
+    if (task.hasAlarm) {
+      await NotificationService().cancelNotification(task.id);
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -215,13 +231,28 @@ class _HomeScreenState extends State<HomeScreen> {
               });
               // Guardar de nuevo al deshacer
               await _saveTasks();
-              // Re-programar la notificación
-              await NotificationService().scheduleNotification(deletedTask);
+              // Re-programar la notificación solo si tiene alarma
+              if (deletedTask.hasAlarm) {
+                await NotificationService().scheduleNotification(deletedTask);
+              }
             },
           ),
         ),
       );
     }
+  }
+
+  // Método para marcar tarea como completada/no completada
+  void _toggleTaskComplete(Task task) async {
+    setState(() {
+      final index = tasks.indexWhere((t) => t.id == task.id);
+      if (index != -1) {
+        tasks[index] = task.copyWith(isCompleted: !task.isCompleted);
+      }
+    });
+
+    // Guardar cambios
+    await _saveTasks();
   }
 
   // Método para eliminar tarea cuando se descarta la alarma (solo para tareas no repetitivas)
@@ -273,9 +304,13 @@ class _HomeScreenState extends State<HomeScreen> {
     List<Task> filtered;
 
     switch (_selectedIndex) {
-      case 0: // Hoy
+      case 0: // Pendientes (sin alarma)
+        filtered = tasks.where((task) => !task.hasAlarm).toList();
+        break;
+      case 1: // Hoy
         filtered =
             tasks.where((task) {
+              if (!task.hasAlarm) return false; // Solo mostrar tareas con alarma
               final taskDate = DateTime(
                 task.assignedTime.year,
                 task.assignedTime.month,
@@ -285,9 +320,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   task.repetitionType == RepetitionType.none;
             }).toList();
         break;
-      case 1: // Otros días
+      case 2: // Otros días
         filtered =
             tasks.where((task) {
+              if (!task.hasAlarm) return false; // Solo mostrar tareas con alarma
               final taskDate = DateTime(
                 task.assignedTime.year,
                 task.assignedTime.month,
@@ -297,10 +333,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   task.repetitionType == RepetitionType.none;
             }).toList();
         break;
-      case 2: // Repetitivas
+      case 3: // Repetitivas
         filtered =
             tasks.where((task) {
-              return task.repetitionType != RepetitionType.none;
+              return task.hasAlarm && task.repetitionType != RepetitionType.none;
             }).toList();
         break;
       default:
@@ -315,10 +351,12 @@ class _HomeScreenState extends State<HomeScreen> {
   String _getEmptyMessage() {
     switch (_selectedIndex) {
       case 0:
-        return 'No hay tareas para hoy';
+        return 'No hay tareas pendientes';
       case 1:
-        return 'No hay tareas programadas';
+        return 'No hay tareas para hoy';
       case 2:
+        return 'No hay tareas programadas';
+      case 3:
         return 'No hay tareas repetitivas';
       default:
         return 'No hay tareas';
@@ -394,7 +432,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     onDismissed: (direction) {
                       _deleteTask(task);
                     },
-                    child: TaskCard(task: task, onTap: () => _editTask(task)),
+                    child: TaskCard(
+                      task: task, 
+                      onTap: () => _editTask(task),
+                      onToggleComplete: (isCompleted) => _toggleTaskComplete(task),
+                    ),
                   );
                 },
               ),
@@ -410,10 +452,14 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: Colors.grey[500],
         type: BottomNavigationBarType.fixed,
         items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_box_outlined), 
+            label: 'Pendientes',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.today), label: 'Hoy'),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_month),
-            label: 'Otros días',
+            label: 'Próximas',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.repeat),
