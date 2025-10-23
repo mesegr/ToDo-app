@@ -26,6 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // Índice de la pestaña seleccionada
   int _selectedIndex = 0;
 
+  // Controller para el PageView
+  late PageController _pageController;
+
   // Clave para SharedPreferences
   static const String _tasksKey = 'tasks';
 
@@ -43,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
     _loadTasks();
 
     // Configurar el callback para cuando se toque una notificación
@@ -62,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _pageController.dispose();
     _alarmCheckTimer?.cancel();
     super.dispose();
   }
@@ -154,17 +159,71 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              newTask.hasAlarm
-                ? 'Tarea "${newTask.title}" añadida'
-                : 'Pendiente "${newTask.title}" creado',
+        // Determinar a qué pestaña navegar
+        int targetIndex;
+        
+        if (!newTask.hasAlarm) {
+          // Sin alarma → Pendientes (índice 0)
+          targetIndex = 0;
+        } else if (newTask.repetitionType != RepetitionType.none) {
+          // Con alarma y repetición → Repetitivas (índice 3)
+          targetIndex = 3;
+        } else {
+          // Con alarma y sin repetición → Verificar si es hoy o futura
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final taskDate = DateTime(
+            newTask.assignedTime.year,
+            newTask.assignedTime.month,
+            newTask.assignedTime.day,
+          );
+          
+          if (taskDate.isAtSameMomentAs(today)) {
+            // Es hoy → Hoy (índice 1)
+            targetIndex = 1;
+          } else {
+            // Es futura → Próximas (índice 2)
+            targetIndex = 2;
+          }
+        }
+
+        // Navegar a la pestaña correspondiente
+        if (targetIndex != _selectedIndex) {
+          setState(() {
+            _selectedIndex = targetIndex;
+          });
+          _pageController.animateToPage(
+            targetIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+
+        // Esperar un momento para que se muestre la tarea
+        await Future.delayed(const Duration(milliseconds: 400));
+        
+        // Mostrar confirmación visual
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '✓ Tarea creada: "${newTask.title}"',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green[700],
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
             ),
-            backgroundColor: const Color(0xFF8B5CF6),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+          );
+        }
       }
     }
   }
@@ -390,8 +449,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return filtered;
   }
 
-  String _getEmptyMessage() {
-    switch (_selectedIndex) {
+  String _getEmptyMessage(int index) {
+    switch (index) {
       case 0:
         return 'No hay tareas pendientes';
       case 1:
@@ -435,10 +494,80 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildTaskList(int tabIndex) {
+    // Guardar el índice actual temporalmente para obtener las tareas filtradas
+    final previousIndex = _selectedIndex;
+    _selectedIndex = tabIndex;
+    final filteredTasks = _getFilteredTasks();
+    _selectedIndex = previousIndex;
+
+    if (filteredTasks.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.task_alt, size: 100, color: Colors.grey[600]),
+            const SizedBox(height: 16),
+            Text(
+              _getEmptyMessage(tabIndex),
+              style: TextStyle(fontSize: 20, color: Colors.grey[300]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Presiona el botón + para añadir una tarea',
+              style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filteredTasks.length,
+      itemBuilder: (context, index) {
+        final task = filteredTasks[index];
+        return Dismissible(
+          key: Key(task.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.delete, color: Colors.white, size: 32),
+                SizedBox(height: 4),
+                Text(
+                  'Eliminar',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          onDismissed: (direction) {
+            _deleteTask(task);
+          },
+          child: TaskCard(
+            task: task,
+            onTap: () => _editTask(task),
+            onToggleComplete: (isCompleted) => _toggleTaskComplete(task),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredTasks = _getFilteredTasks();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis Tareas'),
@@ -591,69 +720,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-          // Lista de tareas
+          // PageView para deslizar entre pestañas
           Expanded(
-            child: filteredTasks.isEmpty
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.task_alt, size: 100, color: Colors.grey[600]),
-                    const SizedBox(height: 16),
-                    Text(
-                      _getEmptyMessage(),
-                      style: TextStyle(fontSize: 20, color: Colors.grey[300]),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Presiona el botón + para añadir una tarea',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[400]),
-                    ),
-                  ],
-                ),
-              )
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: filteredTasks.length,
-                itemBuilder: (context, index) {
-                  final task = filteredTasks[index];
-                  return Dismissible(
-                    key: Key(task.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.delete, color: Colors.white, size: 32),
-                          SizedBox(height: 4),
-                          Text(
-                            'Eliminar',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    onDismissed: (direction) {
-                      _deleteTask(task);
-                    },
-                    child: TaskCard(
-                      task: task, 
-                      onTap: () => _editTask(task),
-                      onToggleComplete: (isCompleted) => _toggleTaskComplete(task),
-                    ),
-                  );
-                },
-              ),
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+              children: [
+                _buildTaskList(0), // Pendientes
+                _buildTaskList(1), // Hoy
+                _buildTaskList(2), // Próximas
+                _buildTaskList(3), // Repetitivas
+              ],
+            ),
           ),
         ],
       ),
@@ -663,6 +745,11 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _selectedIndex = index;
           });
+          _pageController.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
         },
         backgroundColor: const Color(0xFF2A2438),
         selectedItemColor: const Color(0xFF8B5CF6),
