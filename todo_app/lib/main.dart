@@ -4,6 +4,7 @@ import 'package:workmanager/workmanager.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 import 'services/alarm_worker.dart';
+import 'services/widget_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,9 @@ void main() async {
 
   // Inicializar el servicio de notificaciones
   await NotificationService().initialize();
+
+  // Inicializar el widget
+  await WidgetService.initialize();
 
   runApp(const MainApp());
 }
