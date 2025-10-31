@@ -13,11 +13,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Mis Tareas"
-        android:textSize="18sp"
+        android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
         android:gravity="center"
-        android:paddingBottom="12dp"/>
+        android:paddingBottom="14dp"/>
 
     <!-- Contador de tareas -->
     <LinearLayout
@@ -39,7 +39,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textSize="32sp"
+                android:textSize="40sp"
                 android:textStyle="bold"
                 android:textColor="#8B5CF6"/>
 
@@ -47,7 +47,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Pendientes"
-                android:textSize="12sp"
+                android:textSize="13sp"
                 android:textColor="#FFFFFF"/>
         </LinearLayout>
 
@@ -64,7 +64,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textSize="32sp"
+                android:textSize="40sp"
                 android:textStyle="bold"
                 android:textColor="#8B5CF6"/>
 
@@ -72,7 +72,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Alarmas hoy"
-                android:textSize="12sp"
+                android:textSize="13sp"
                 android:textColor="#FFFFFF"/>
         </LinearLayout>
 
@@ -89,7 +89,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textSize="32sp"
+                android:textSize="40sp"
                 android:textStyle="bold"
                 android:textColor="#8B5CF6"/>
 
@@ -97,19 +97,23 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Todas alarmas"
-                android:textSize="12sp"
+                android:textSize="13sp"
                 android:textColor="#FFFFFF"/>
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Mensaje para hoy -->
-    <TextView
+    <!-- Botón para añadir tarea -->
+    <Button
+        android:id="@+id/add_task_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Tareas de hoy"
-        android:textSize="12sp"
-        android:textColor="#AAAAAA"
-        android:gravity="center"
-        android:paddingTop="12dp"/>
+        android:text="+ Añadir tarea"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:textSize="17sp"
+        android:background="@drawable/button_background"
+        android:layout_marginTop="45dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"/>
 
 </LinearLayout>

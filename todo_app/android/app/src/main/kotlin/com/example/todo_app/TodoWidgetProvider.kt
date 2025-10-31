@@ -39,17 +39,30 @@ class TodoWidgetProvider : AppWidgetProvider() {
         views.setTextViewText(R.id.tasks_with_alarm_today, tasksWithAlarmToday.toString())
         views.setTextViewText(R.id.all_tasks_with_alarm, allTasksWithAlarm.toString())
 
-        // Configurar el click para abrir la app
-        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-        if (intent != null) {
-            val pendingIntent = PendingIntent.getActivity(
+        // Configurar el click del widget para abrir la app
+        val openAppIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        if (openAppIntent != null) {
+            val openAppPendingIntent = PendingIntent.getActivity(
                 context,
                 0,
-                intent,
+                openAppIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+            views.setOnClickPendingIntent(R.id.widget_container, openAppPendingIntent)
         }
+
+        // Configurar el botón de añadir tarea
+        val addTaskIntent = Intent(context, MainActivity::class.java).apply {
+            action = "ADD_TASK"
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val addTaskPendingIntent = PendingIntent.getActivity(
+            context,
+            1,
+            addTaskIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.add_task_button, addTaskPendingIntent)
 
         // Actualizar el widget
         appWidgetManager.updateAppWidget(appWidgetId, views)
