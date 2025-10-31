@@ -1,8 +1,10 @@
 package com.example.todo_app
 
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.Intent
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetPlugin
 
@@ -28,14 +30,26 @@ class TodoWidgetProvider : AppWidgetProvider() {
 
         // Obtener datos desde SharedPreferences (guardados por Flutter)
         val widgetData = HomeWidgetPlugin.getData(context)
-        val taskCount = widgetData.getInt("task_count", 0)
-        val pendingCount = widgetData.getInt("pending_count", 0)
-        val completedCount = widgetData.getInt("completed_count", 0)
+        val tasksWithoutAlarm = widgetData.getInt("tasks_without_alarm", 0)
+        val tasksWithAlarmToday = widgetData.getInt("tasks_with_alarm_today", 0)
+        val allTasksWithAlarm = widgetData.getInt("all_tasks_with_alarm", 0)
 
         // Actualizar los TextViews
-        views.setTextViewText(R.id.task_count, taskCount.toString())
-        views.setTextViewText(R.id.pending_count, pendingCount.toString())
-        views.setTextViewText(R.id.completed_count, completedCount.toString())
+        views.setTextViewText(R.id.tasks_without_alarm, tasksWithoutAlarm.toString())
+        views.setTextViewText(R.id.tasks_with_alarm_today, tasksWithAlarmToday.toString())
+        views.setTextViewText(R.id.all_tasks_with_alarm, allTasksWithAlarm.toString())
+
+        // Configurar el click para abrir la app
+        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        if (intent != null) {
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+        }
 
         // Actualizar el widget
         appWidgetManager.updateAppWidget(appWidgetId, views)

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -25,7 +26,7 @@
         android:orientation="horizontal"
         android:gravity="center">
 
-        <!-- Total de tareas -->
+        <!-- Tareas sin alarma -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -34,7 +35,7 @@
             android:gravity="center">
 
             <TextView
-                android:id="@+id/task_count"
+                android:id="@+id/tasks_without_alarm"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
@@ -45,37 +46,12 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Total"
-                android:textSize="12sp"
-                android:textColor="#FFFFFF"/>
-        </LinearLayout>
-
-        <!-- Tareas pendientes -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-
-            <TextView
-                android:id="@+id/pending_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="32sp"
-                android:textStyle="bold"
-                android:textColor="#FF9800"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:text="Pendientes"
                 android:textSize="12sp"
                 android:textColor="#FFFFFF"/>
         </LinearLayout>
 
-        <!-- Tareas completadas -->
+        <!-- Alarmas de hoy -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -84,18 +60,43 @@
             android:gravity="center">
 
             <TextView
-                android:id="@+id/completed_count"
+                android:id="@+id/tasks_with_alarm_today"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textSize="32sp"
                 android:textStyle="bold"
-                android:textColor="#4CAF50"/>
+                android:textColor="#8B5CF6"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Hechas"
+                android:text="Alarmas hoy"
+                android:textSize="12sp"
+                android:textColor="#FFFFFF"/>
+        </LinearLayout>
+
+        <!-- Alarmas totales -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/all_tasks_with_alarm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:textColor="#8B5CF6"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Todas alarmas"
                 android:textSize="12sp"
                 android:textColor="#FFFFFF"/>
         </LinearLayout>

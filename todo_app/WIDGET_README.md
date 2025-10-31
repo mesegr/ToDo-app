@@ -1,21 +1,26 @@
 # Widget de Tareas - Todo App
 
-## 📱 Widget Simple y Funcional
+## 📱 Widget con Lista de Tareas
 
-Este es un widget básico para la pantalla principal de Android que muestra el resumen de tus tareas del día.
+Este widget muestra tus tareas de hoy directamente en la pantalla principal de Android, con el mismo estilo que la app.
 
 ## ✨ Características Actuales
 
-- **📊 Contador Total**: Muestra el número total de tareas programadas para hoy
-- **⏳ Tareas Pendientes**: Cuenta las tareas que aún no has completado (en naranja)
-- **✅ Tareas Completadas**: Muestra cuántas tareas ya terminaste (en verde)
+- **� Lista de Tareas**: Muestra hasta 5 tareas del día con su información completa
+- **⏰ Hora de Cada Tarea**: Ver la hora programada para cada tarea
+- **✅ Estado Visual**: Iconos diferentes según el tipo y estado de la tarea:
+  - 🔔 Morado: Tarea con alarma pendiente
+  - ✓ Verde: Tarea completada
+  - 📋 Naranja: Tarea sin alarma (to-do simple)
+- **📊 Contador**: Número total de tareas en la esquina superior
 - **🔄 Actualización Automática**: Se actualiza cada vez que añades, editas o completas una tarea
 
 ## 🎨 Diseño
 
 - **Colores**: Usa la paleta morada de la app (#8B5CF6)
 - **Fondo**: Oscuro con bordes redondeados
-- **Tamaño**: Pequeño y compacto (3x2 celdas aproximadamente)
+- **Layout**: Compacto y fácil de leer
+- **Iconos**: Visuales intuitivos para cada tipo de tarea
 
 ## 📲 Cómo Añadir el Widget
 
@@ -35,19 +40,21 @@ El widget se actualiza cuando:
 
 ### Datos mostrados
 - Solo muestra tareas del día actual
-- Separa entre completadas y pendientes
+- Máximo 5 tareas (las primeras por hora)
+- Ordenadas por hora cronológicamente
+- Muestra título, hora e icono de estado
 - Actualización en tiempo real
 
 ## 🚀 Próximas Mejoras (Poco a Poco)
 
 Ideas para añadir en el futuro:
-- [ ] Mostrar lista de próximas tareas
-- [ ] Botón para abrir la app
+- [ ] Tocar una tarea para abrirla en la app
 - [ ] Botón rápido para añadir tarea
-- [ ] Mostrar próxima alarma
-- [ ] Diferentes tamaños de widget
-- [ ] Toque en el widget para ver detalles
-- [ ] Tema claro/oscuro
+- [ ] Marcar tarea como completada desde el widget
+- [ ] Diferentes tamaños de widget (2x2, 4x2, 4x4)
+- [ ] Mostrar próxima alarma destacada
+- [ ] Tema claro/oscuro configurable
+- [ ] Widget para tareas de otros días
 
 ## 🐛 Solución de Problemas
 
@@ -61,10 +68,16 @@ Ideas para añadir en el futuro:
 2. Añade o edita una tarea
 3. El widget debería actualizarse automáticamente
 
-### Muestra 0 en todo
+### Muestra "No hay tareas para hoy"
 - Es normal si no tienes tareas para hoy
 - Añade una tarea con fecha de hoy y verifica
+- El widget solo muestra tareas del día actual
+
+### No veo todas mis tareas
+- El widget muestra máximo 5 tareas por espacio
+- Se muestran las primeras 5 tareas ordenadas por hora
+- Para ver todas tus tareas, abre la app
 
 ---
 
-**Nota**: Este es un widget base y funcional. Las funcionalidades se añadirán progresivamente. 🎯
+**Nota**: Este widget ahora muestra tus tareas igual que en la app principal. 🎯

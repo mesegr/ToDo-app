@@ -26,14 +26,19 @@ class WidgetService {
         return taskDate.isAtSameMomentAs(today);
       }).toList();
 
-      // Contar tareas completadas y pendientes
-      final completedTasks = todayTasks.where((t) => t.isCompleted).length;
-      final pendingTasks = todayTasks.length - completedTasks;
+      // Contar tareas sin alarma
+      final tasksWithoutAlarm = todayTasks.where((t) => !t.hasAlarm).length;
+
+      // Contar tareas con alarma de hoy
+      final tasksWithAlarmToday = todayTasks.where((t) => t.hasAlarm).length;
+
+      // Contar tareas con alarma totales (todas las fechas)
+      final allTasksWithAlarm = tasks.where((t) => t.hasAlarm).length;
 
       // Guardar datos para el widget
-      await HomeWidget.saveWidgetData<int>('task_count', todayTasks.length);
-      await HomeWidget.saveWidgetData<int>('pending_count', pendingTasks);
-      await HomeWidget.saveWidgetData<int>('completed_count', completedTasks);
+      await HomeWidget.saveWidgetData<int>('tasks_without_alarm', tasksWithoutAlarm);
+      await HomeWidget.saveWidgetData<int>('tasks_with_alarm_today', tasksWithAlarmToday);
+      await HomeWidget.saveWidgetData<int>('all_tasks_with_alarm', allTasksWithAlarm);
 
       // Actualizar el widget
       await HomeWidget.updateWidget(

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/task_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="#22FFFFFF"
+    android:layout_marginBottom="6dp"
+    android:visibility="gone">
+
+    <!-- Icono de estado -->
+    <ImageView
+        android:id="@+id/task_icon"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:src="@android:drawable/checkbox_off_background"
+        android:layout_gravity="center_vertical"
+        android:layout_marginEnd="10dp"/>
+
+    <!-- Contenido de la tarea -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Título -->
+        <TextView
+            android:id="@+id/task_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Título de la tarea"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <!-- Hora -->
+        <TextView
+            android:id="@+id/task_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textSize="11sp"
+            android:textColor="#AAAAAA"
+            android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+</LinearLayout>

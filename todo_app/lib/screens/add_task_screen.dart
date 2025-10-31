@@ -168,7 +168,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
-                  value: _selectedMonthDay,
+                  initialValue: _selectedMonthDay,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
@@ -296,7 +296,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     }
                   });
                 },
-                activeColor: const Color(0xFF8B5CF6),
+                activeThumbColor: const Color(0xFF8B5CF6),
                 secondary: Icon(
                   _hasAlarm ? Icons.notifications_active : Icons.check_box,
                   color: const Color(0xFF8B5CF6),
