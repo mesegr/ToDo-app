@@ -1,5 +1,10 @@
 import 'repetition_type.dart';
 
+// Clase auxiliar para diferenciar entre "no pasar el parámetro" y "pasar null"
+class _Undefined {
+  const _Undefined();
+}
+
 class Task {
   final String id;
   final String title;
@@ -10,6 +15,7 @@ class Task {
   final List<DayOfWeek> weeklyDays; // Para tareas semanales (múltiples días)
   final int? monthlyDay; // Para tareas mensuales (día del mes)
   final bool hasAlarm; // Indica si la tarea tiene alarma o es solo un to-do
+  final String? category; // Categoría/carpeta para organizar tareas
 
   Task({
     required this.id,
@@ -21,6 +27,7 @@ class Task {
     this.weeklyDays = const [],
     this.monthlyDay,
     this.hasAlarm = true, // Por defecto tiene alarma (retrocompatibilidad)
+    this.category, // Categoría opcional
   });
 
   Task copyWith({
@@ -33,6 +40,7 @@ class Task {
     List<DayOfWeek>? weeklyDays,
     int? monthlyDay,
     bool? hasAlarm,
+    Object? category = const _Undefined(), // Usar Object para permitir null explícito
   }) {
     return Task(
       id: id ?? this.id,
@@ -44,6 +52,7 @@ class Task {
       weeklyDays: weeklyDays ?? this.weeklyDays,
       monthlyDay: monthlyDay ?? this.monthlyDay,
       hasAlarm: hasAlarm ?? this.hasAlarm,
+      category: category is _Undefined ? this.category : category as String?,
     );
   }
 
@@ -88,6 +97,7 @@ class Task {
       'weeklyDays': weeklyDays.map((day) => day.index).toList(),
       'monthlyDay': monthlyDay,
       'hasAlarm': hasAlarm,
+      'category': category,
     };
   }
 
@@ -116,6 +126,7 @@ class Task {
       weeklyDays: weeklyDaysList,
       monthlyDay: json['monthlyDay'] as int?,
       hasAlarm: json['hasAlarm'] as bool? ?? true, // Por defecto true para retrocompatibilidad
+      category: json['category'] as String?,
     );
   }
 }

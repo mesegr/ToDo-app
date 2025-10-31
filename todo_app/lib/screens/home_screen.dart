@@ -43,6 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _filterByDay; // null, 'today', 'tomorrow', 'week', 'month'
   bool _showFilterMenu = false;
 
+  // Variables para el sistema de categorías
+  List<String> _categories = [];
+
   @override
   void initState() {
     super.initState();
@@ -122,7 +125,175 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         tasks = tasksList.map((taskJson) => Task.fromJson(taskJson)).toList();
         tasks.sort((a, b) => a.assignedTime.compareTo(b.assignedTime));
+        _loadCategories(); // Cargar categorías desde las tareas
       });
+    }
+  }
+
+  // Extraer categorías únicas de las tareas
+  void _loadCategories() {
+    final Set<String> uniqueCategories = {};
+    for (final task in tasks) {
+      if (task.category != null && task.category!.isNotEmpty) {
+        uniqueCategories.add(task.category!);
+      }
+    }
+    _categories = uniqueCategories.toList()..sort();
+  }
+
+  // Crear una nueva categoría
+  Future<void> _createCategory() async {
+    final TextEditingController controller = TextEditingController();
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2D2640),
+        title: const Text('Nueva Carpeta', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: 'Nombre de la carpeta',
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[600]!),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Color(0xFF8B5CF6)),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.pop(context, name);
+              }
+            },
+            child: const Text('Crear', style: TextStyle(color: Color(0xFF8B5CF6))),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && !_categories.contains(result)) {
+      setState(() {
+        _categories.add(result);
+        _categories.sort();
+      });
+    }
+  }
+
+  // Mover tarea a una categoría
+  Future<void> _moveTaskToCategory(Task task, String? category) async {
+    final index = tasks.indexWhere((t) => t.id == task.id);
+    if (index == -1) return;
+    
+    // Actualizar la tarea con la nueva categoría
+    final updatedTask = task.copyWith(category: category);
+    tasks[index] = updatedTask;
+    
+    // Guardar cambios
+    await _saveTasks();
+    
+    // Recargar categorías y forzar reconstrucción completa
+    setState(() {
+      _loadCategories();
+    });
+    
+    // Mostrar confirmación
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            category == null 
+              ? '✓ Tarea sacada de la carpeta' 
+              : '✓ Tarea movida a "$category"',
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  // Sacar tarea de carpeta (mediante deslizar a la derecha)
+  void _removeTaskFromCategory(Task task) {
+    final index = tasks.indexWhere((t) => t.id == task.id);
+    if (index == -1) return;
+    
+    // Crear una copia de la tarea sin categoría
+    final taskWithoutCategory = task.copyWith(category: null);
+    
+    // PRIMERO: Eliminar la tarea original completamente
+    setState(() {
+      tasks.removeAt(index);
+    });
+    
+    // DESPUÉS: En el siguiente frame, añadir la nueva tarea
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          tasks.insert(index, taskWithoutCategory);
+          _loadCategories();
+        });
+        _saveTasks();
+        
+        // Mostrar confirmación
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Tarea sacada de la carpeta'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
+  }
+
+
+  // Eliminar categoría (pone las tareas en null)
+  Future<void> _deleteCategory(String category) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2D2640),
+        title: const Text('Eliminar Carpeta', style: TextStyle(color: Colors.white)),
+        content: Text(
+          '¿Eliminar "$category"?\n\nLas tareas NO se eliminarán, solo quedarán sin carpeta.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        // Remover categoría de todas las tareas que la tengan
+        for (int i = 0; i < tasks.length; i++) {
+          if (tasks[i].category == category) {
+            tasks[i] = tasks[i].copyWith(category: null);
+          }
+        }
+        _categories.remove(category);
+      });
+      await _saveTasks();
     }
   }
 
@@ -495,7 +666,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTaskList(int tabIndex) {
-    // Guardar el índice actual temporalmente para obtener las tareas filtradas
+    // Solo aplicar categorías en "Pendientes" (índice 0)
+    if (tabIndex == 0) {
+      return _buildPendientesWithCategories();
+    }
+
+    // Para las demás pestañas, mantener el comportamiento actual
     final previousIndex = _selectedIndex;
     _selectedIndex = tabIndex;
     final filteredTasks = _getFilteredTasks();
@@ -563,6 +739,271 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
+    );
+  }
+
+  // Widget especializado para "Pendientes" con categorías
+  Widget _buildPendientesWithCategories() {
+    // Obtener solo tareas sin alarma
+    final pendingTasks = tasks.where((task) => !task.hasAlarm).toList();
+
+    if (pendingTasks.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.task_alt, size: 100, color: Colors.grey[600]),
+            const SizedBox(height: 16),
+            const Text(
+              'No hay tareas pendientes',
+              style: TextStyle(fontSize: 20, color: Colors.white70),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Presiona el botón + para añadir una tarea',
+              style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Agrupar tareas por categoría
+    final Map<String?, List<Task>> tasksByCategory = {};
+    for (final task in pendingTasks) {
+      tasksByCategory.putIfAbsent(task.category, () => []).add(task);
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Botón para crear nueva carpeta
+        GestureDetector(
+          onTap: _createCategory,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3D3350),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_circle_outline, color: Color(0xFF8B5CF6), size: 28),
+                SizedBox(width: 8),
+                Text(
+                  'Crear Nueva Carpeta',
+                  style: TextStyle(
+                    color: Color(0xFF8B5CF6),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Mostrar categorías existentes
+        ..._categories.map((category) {
+          final categoryTasks = tasksByCategory[category] ?? [];
+          return _buildCategorySection(category, categoryTasks);
+        }),
+
+        // Tareas sin categoría (normales, sin sección especial)
+        ...tasksByCategory[null]?.map((task) => _buildDraggableTask(task)) ?? [],
+      ],
+    );
+  }
+
+  // Sección de categoría con drag target
+  Widget _buildCategorySection(String category, List<Task> categoryTasks) {
+    return DragTarget<Task>(
+      onWillAcceptWithDetails: (details) => details.data.category != category,
+      onAcceptWithDetails: (details) {
+        _moveTaskToCategory(details.data, category);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovering = candidateData.isNotEmpty;
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: isHovering ? const Color(0xFF4A3F5C) : const Color(0xFF3D3350),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isHovering ? const Color(0xFF8B5CF6) : Colors.grey[700]!,
+              width: isHovering ? 3 : 1,
+            ),
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              leading: const Icon(Icons.folder, color: Color(0xFF8B5CF6), size: 28),
+              title: Text(
+              category,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            subtitle: Text(
+              '${categoryTasks.length} ${categoryTasks.length == 1 ? 'tarea' : 'tareas'}',
+              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isHovering ? '⬇ Soltar aquí' : '',
+                  style: const TextStyle(color: Color(0xFF8B5CF6), fontSize: 12),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                  onPressed: () => _deleteCategory(category),
+                ),
+              ],
+            ),
+            children: categoryTasks.map((task) => _buildDraggableTask(task)).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Tarea draggable
+  Widget _buildDraggableTask(Task task) {
+    return LongPressDraggable<Task>(
+      key: ValueKey('${task.id}_${task.category}'), // Key única que cambia con la categoría
+      data: task,
+      dragAnchorStrategy: pointerDragAnchorStrategy,
+      feedback: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: MediaQuery.of(context).size.width - 48,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF8B5CF6),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.drag_indicator, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  task.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: TaskCard(
+          task: task,
+          onTap: () {},
+          onToggleComplete: (_) {},
+        ),
+      ),
+      child: Dismissible(
+        key: Key('${task.id}_${task.category ?? "no_category"}'), // Key única que cambia con la categoría
+        // Si tiene categoría: ambas direcciones. Si no: solo eliminar (izquierda)
+        direction: task.category != null 
+            ? DismissDirection.horizontal 
+            : DismissDirection.endToStart,
+        confirmDismiss: (direction) async {
+          // Deslizar a la DERECHA = sacar de carpeta (solo si tiene categoría)
+          if (direction == DismissDirection.startToEnd && task.category != null) {
+            return true; // Permitir el dismiss para sacar de carpeta
+          }
+          // Deslizar a la IZQUIERDA = eliminar
+          if (direction == DismissDirection.endToStart) {
+            return true; // Permitir el dismiss para eliminar
+          }
+          return false;
+        },
+        background: Container(
+          // Background para deslizar DERECHA (sacar de carpeta)
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF8B5CF6), // Morado para sacar de carpeta
+            borderRadius: BorderRadius.circular(12),
+          ),
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.only(left: 20),
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.folder_off, color: Colors.white, size: 28),
+              SizedBox(height: 4),
+              Text(
+                'Sacar',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        secondaryBackground: Container(
+          // Background para deslizar IZQUIERDA (eliminar)
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.delete, color: Colors.white, size: 28),
+              SizedBox(height: 4),
+              Text(
+                'Eliminar',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        onDismissed: (direction) {
+          if (direction == DismissDirection.startToEnd) {
+            // Deslizó a la DERECHA = sacar de carpeta
+            _removeTaskFromCategory(task);
+          } else {
+            // Deslizó a la IZQUIERDA = eliminar
+            _deleteTask(task);
+          }
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: TaskCard(
+            task: task,
+            onTap: () => _editTask(task),
+            onToggleComplete: (isCompleted) => _toggleTaskComplete(task),
+          ),
+        ),
+      ),
     );
   }
 

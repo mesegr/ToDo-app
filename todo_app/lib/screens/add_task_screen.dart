@@ -104,6 +104,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         weeklyDays: _hasAlarm ? _selectedWeekDays : [],
         monthlyDay: _hasAlarm ? _selectedMonthDay : null,
         hasAlarm: _hasAlarm,
+        category: null,
       );
 
       Navigator.pop(context, task);

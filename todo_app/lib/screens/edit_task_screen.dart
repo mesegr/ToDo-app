@@ -119,6 +119,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
         weeklyDays: _hasAlarm ? _selectedWeekDays : [],
         monthlyDay: _hasAlarm ? _selectedMonthDay : null,
         hasAlarm: _hasAlarm,
+        category: widget.task.category, // Mantener la categoría actual
       );
 
       Navigator.pop(context, updatedTask);
