@@ -1,4 +1,4 @@
-# VeilFire Requiem - (BETA)  
+# Todo app 
 
 An intuitive application to organize your daily tasks and reminders. Stay productive and on top of your everyday responsibilities with easy-to-use task management tools.
 
