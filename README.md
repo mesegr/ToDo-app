@@ -2,7 +2,12 @@
 
 Aplicación Android para organizar tareas y recordatorios, desarrollada con Flutter. Permite mantener pendientes sencillos y programar alarmas para tareas puntuales o recurrentes.
 
-![Pantalla principal](images/image1.jpeg)
+<p align="center">
+  <img src="img/todo1.jpg" width="24%" alt="Menú principal">
+  <img src="img/todo2.jpg" width="24%" alt="Añadir tarea">
+  <img src="img/todo3.jpg" width="24%" alt="Editar tarea">
+  <img src="img/todo4.jpg" width="24%" alt="Borrar tarea">
+</p>
 
 ## Funciones
 
