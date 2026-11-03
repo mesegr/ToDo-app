@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -22,8 +23,8 @@ class NotificationService {
     // Configurar la zona horaria de Madrid específicamente
     tz.setLocalLocation(tz.getLocation('Europe/Madrid'));
 
-    print('🌍 Zona horaria configurada: ${tz.local.name}');
-    print('🕐 Hora local actual: ${tz.TZDateTime.now(tz.local)}');
+    debugPrint('🌍 Zona horaria configurada: ${tz.local.name}');
+    debugPrint('🕐 Hora local actual: ${tz.TZDateTime.now(tz.local)}');
 
     // Crear el canal de notificaciones para Android
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -63,7 +64,7 @@ class NotificationService {
   }
 
   Future<void> _requestPermissions() async {
-    print('🔐 Solicitando permisos de notificación...');
+    debugPrint('🔐 Solicitando permisos de notificación...');
 
     final android =
         _notifications
@@ -75,28 +76,27 @@ class NotificationService {
       // Solicitar permiso de notificaciones
       final notificationPermission =
           await android.requestNotificationsPermission();
-      print('📱 Permiso de notificaciones: $notificationPermission');
+      debugPrint('📱 Permiso de notificaciones: $notificationPermission');
 
       if (notificationPermission != true) {
-        print('⚠️ ADVERTENCIA: Permisos de notificación denegados');
+        debugPrint('⚠️ ADVERTENCIA: Permisos de notificación denegados');
       }
 
       // Solicitar permiso de alarmas exactas
       final alarmPermission = await android.requestExactAlarmsPermission();
-      print('⏰ Permiso de alarmas exactas: $alarmPermission');
+      debugPrint('⏰ Permiso de alarmas exactas: $alarmPermission');
 
       if (alarmPermission != true) {
-        print('⚠️ ADVERTENCIA: Permisos de alarmas exactas denegados');
-        print(
+        debugPrint('⚠️ ADVERTENCIA: Permisos de alarmas exactas denegados');
+        debugPrint(
           '💡 Ve a Configuración > Aplicaciones > Todo App > Alarmas y recordatorios',
         );
       }
 
       // Verificar si se pueden programar alarmas exactas
       final canSchedule = await android.canScheduleExactNotifications();
-      print('✅ Puede programar alarmas exactas: $canSchedule');
+      debugPrint('✅ Puede programar alarmas exactas: $canSchedule');
     }
-
   }
 
   void _onNotificationTap(NotificationResponse response) {
@@ -112,9 +112,9 @@ class NotificationService {
 
     final notificationId = task.id.hashCode;
 
-    print('📅 Programando notificación para: ${task.title}');
-    print('⏰ Fecha/Hora: ${task.assignedTime}');
-    print('🔁 Tipo: ${task.repetitionType}');
+    debugPrint('📅 Programando notificación para: ${task.title}');
+    debugPrint('⏰ Fecha/Hora: ${task.assignedTime}');
+    debugPrint('🔁 Tipo: ${task.repetitionType}');
 
     // Detalles de la notificación para Android
     const androidDetails = AndroidNotificationDetails(
@@ -134,31 +134,30 @@ class NotificationService {
 
     final scheduledDate = tz.TZDateTime.from(task.assignedTime, tz.local);
 
-    print('🕐 Hora actual: ${tz.TZDateTime.now(tz.local)}');
-    print('🎯 Hora programada: $scheduledDate');
+    debugPrint('🕐 Hora actual: ${tz.TZDateTime.now(tz.local)}');
+    debugPrint('🎯 Hora programada: $scheduledDate');
 
     if (task.repetitionType == RepetitionType.none) {
       // Tarea única
       if (scheduledDate.isAfter(tz.TZDateTime.now(tz.local))) {
-        print('✅ Programando notificación única...');
+        debugPrint('✅ Programando notificación única...');
 
         // Calcular el delay en segundos para el Worker
         final now = DateTime.now();
         final delay = task.assignedTime.difference(now);
-        
+
         // Programar Worker para que se ejecute en el momento exacto
         // Esto funciona incluso con la app cerrada
         await Workmanager().registerOneOffTask(
           'alarm_${task.id}',
           'alarmTask',
           initialDelay: delay,
-          inputData: {
-            'taskId': task.id,
-            'taskTitle': task.title,
-          },
+          inputData: {'taskId': task.id, 'taskTitle': task.title},
         );
-        
-        print('✅ Worker programado para ejecutarse en ${delay.inSeconds} segundos');
+
+        debugPrint(
+          '✅ Worker programado para ejecutarse en ${delay.inSeconds} segundos',
+        );
 
         // También programar con notificaciones locales como respaldo
         try {
@@ -174,12 +173,14 @@ class NotificationService {
             payload: task.id,
           );
 
-          print('✅ Alarma programada con notificación local ID: $notificationId');
+          debugPrint(
+            '✅ Alarma programada con notificación local ID: $notificationId',
+          );
         } catch (e) {
-          print('❌ Error al programar notificación: $e');
+          debugPrint('❌ Error al programar notificación: $e');
         }
       } else {
-        print(
+        debugPrint(
           '⚠️ La fecha programada ya pasó. No se programa la notificación.',
         );
       }
@@ -330,11 +331,11 @@ class NotificationService {
 
     // Cancelar Worker
     await Workmanager().cancelByUniqueName('alarm_$taskId');
-    print('🚫 Cancelado Worker para tarea: $taskId');
+    debugPrint('🚫 Cancelado Worker para tarea: $taskId');
 
     // Cancelar la notificación principal
     await _notifications.cancel(notificationId);
-    print('🚫 Cancelada notificación ID: $notificationId');
+    debugPrint('🚫 Cancelada notificación ID: $notificationId');
 
     // Cancelar posibles notificaciones semanales adicionales (hasta 7 días)
     for (int i = 0; i < 7; i++) {
@@ -344,10 +345,10 @@ class NotificationService {
 
   // Método para disparar alarma EXTREMA con 1 notificación
   Future<void> fireExtremeAlarm(String taskId, String taskTitle) async {
-    print('🔥🔥🔥 DISPARANDO ALARMA EXTREMA PARA: $taskTitle');
-    
+    debugPrint('🔥🔥🔥 DISPARANDO ALARMA EXTREMA PARA: $taskTitle');
+
     final notificationId = taskId.hashCode;
-    
+
     // Detalles ultra-agresivos
     const androidDetails = AndroidNotificationDetails(
       'extreme_alarms',
@@ -374,8 +375,8 @@ class NotificationService {
       details,
       payload: taskId,
     );
-    
-    print('✅ Notificación extrema disparada!');
+
+    debugPrint('✅ Notificación extrema disparada!');
   }
 
   Future<void> cancelAllNotifications() async {

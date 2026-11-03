@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:vibration/vibration.dart';
@@ -7,13 +8,13 @@ import 'package:vibration/vibration.dart';
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    print('🔔🔔🔔 Worker ejecutándose: $task');
-    print('📋 Datos: $inputData');
-    
+    debugPrint('🔔🔔🔔 Worker ejecutándose: $task');
+    debugPrint('📋 Datos: $inputData');
+
     if (inputData != null) {
       final taskId = inputData['taskId'] as String?;
       final taskTitle = inputData['taskTitle'] as String?;
-      
+
       if (taskId != null && taskTitle != null) {
         // INICIAR VIBRACIÓN CONTINUA E INTENSA PRIMERO
         // Patrón: 0.4 segundo ON, 0.05 segundos OFF, repetir indefinidamente
@@ -25,11 +26,11 @@ void callbackDispatcher() {
             intensities: [0, 255, 0], // Intensidad máxima (255)
             repeat: 0, // Repetir indefinidamente desde el índice 0
           );
-          print('✅ Vibración continua ultra-rápida iniciada!');
+          debugPrint('✅ Vibración continua ultra-rápida iniciada!');
         }
-        
+
         // Inicializar notificaciones
-        final FlutterLocalNotificationsPlugin notifications = 
+        final FlutterLocalNotificationsPlugin notifications =
             FlutterLocalNotificationsPlugin();
 
         await notifications.initialize(
@@ -49,9 +50,11 @@ void callbackDispatcher() {
           enableLights: true,
         );
 
-        final android = notifications
-            .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>();
+        final android =
+            notifications
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >();
         if (android != null) {
           await android.createNotificationChannel(channel);
         }
@@ -69,7 +72,8 @@ void callbackDispatcher() {
               channelDescription: 'Alarmas que no se pueden ignorar',
               importance: Importance.max,
               priority: Priority.max,
-              enableVibration: false, // Desactivada para la notificación (vibración manejada por sistema)
+              enableVibration:
+                  false, // Desactivada para la notificación (vibración manejada por sistema)
               playSound: false,
               fullScreenIntent: true,
               category: AndroidNotificationCategory.alarm,
@@ -86,11 +90,11 @@ void callbackDispatcher() {
           payload: taskId,
         );
 
-        print('✅ Notificación disparada con vibración continua!');
-        print('⚠️ LA VIBRACIÓN SEGUIRÁ HASTA QUE SE ABRA LA APP');
+        debugPrint('✅ Notificación disparada con vibración continua!');
+        debugPrint('⚠️ LA VIBRACIÓN SEGUIRÁ HASTA QUE SE ABRA LA APP');
       }
     }
-    
+
     return Future.value(true);
   });
 }

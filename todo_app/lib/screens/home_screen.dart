@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
 import '../models/repetition_type.dart';
 import '../widgets/task_card.dart';
 import '../services/notification_service.dart';
-import '../services/widget_service.dart';
+import '../notifiers/task_manager.dart';
 import '../helpers/miui_permissions_helper.dart';
 import 'add_task_screen.dart';
 import 'edit_task_screen.dart';
@@ -20,8 +19,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Lista de tareas (inicialmente vacía)
-  List<Task> tasks = [];
+  final TaskManager _taskManager = TaskManager();
+
+  List<Task> get tasks => _taskManager.tasks;
 
   // Índice de la pestaña seleccionada
   int _selectedIndex = 0;
@@ -29,12 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // Controller para el PageView
   late PageController _pageController;
 
-  // Clave para SharedPreferences
-  static const String _tasksKey = 'tasks';
-
   // Timer para verificar alarmas
   Timer? _alarmCheckTimer;
-  
+
   // Set para rastrear alarmas ya mostradas
   final Set<String> _shownAlarms = {};
 
@@ -47,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _selectedIndex);
+    _taskManager.addListener(_onTasksChanged);
     _loadTasks();
 
     // Configurar el callback para cuando se toque una notificación
@@ -68,29 +66,36 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _pageController.dispose();
     _alarmCheckTimer?.cancel();
+    _taskManager
+      ..removeListener(_onTasksChanged)
+      ..dispose();
     super.dispose();
+  }
+
+  void _onTasksChanged() {
+    if (mounted) setState(() {});
   }
 
   void _checkPendingAlarms() {
     final now = DateTime.now();
-    
+
     for (final task in tasks) {
       // Solo verificar tareas que tienen alarma activada
       if (!task.hasAlarm) continue;
-      
+
       // Saltar si ya se mostró esta alarma
       if (_shownAlarms.contains(task.id)) continue;
-      
+
       final taskTime = task.assignedTime;
       final difference = now.difference(taskTime).inSeconds;
-      
+
       // Si la alarma debería haber sonado en los últimos 60 segundos
       if (difference >= 0 && difference <= 60) {
         _shownAlarms.add(task.id);
-        
+
         // DISPARAR ALARMA EXTREMA CON 10 NOTIFICACIONES
         NotificationService().fireExtremeAlarm(task.id, task.title);
-        
+
         // Mostrar pantalla de alarma
         _showAlarmScreen(task.id);
         break; // Solo mostrar una alarma a la vez
@@ -112,30 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Cargar tareas desde SharedPreferences
-  Future<void> _loadTasks() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? tasksJson = prefs.getString(_tasksKey);
-
-    if (tasksJson != null) {
-      final List<dynamic> tasksList = json.decode(tasksJson);
-      setState(() {
-        tasks = tasksList.map((taskJson) => Task.fromJson(taskJson)).toList();
-        tasks.sort((a, b) => a.assignedTime.compareTo(b.assignedTime));
-      });
-    }
-  }
-
-  // Guardar tareas en SharedPreferences
-  Future<void> _saveTasks() async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<Map<String, dynamic>> tasksJson =
-        tasks.map((task) => task.toJson()).toList();
-    await prefs.setString(_tasksKey, json.encode(tasksJson));
-    
-    // Actualizar widget después de guardar tareas
-    await WidgetService.updateWidget();
-  }
+  Future<void> _loadTasks() => _taskManager.load();
 
   Future<void> _addTask() async {
     final Task? newTask = await Navigator.push(
@@ -144,14 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (newTask != null) {
-      setState(() {
-        tasks.add(newTask);
-        // Ordenar tareas por fecha/hora
-        tasks.sort((a, b) => a.assignedTime.compareTo(b.assignedTime));
-      });
-
-      // Guardar cambios
-      await _saveTasks();
+      await _taskManager.add(newTask);
 
       // Programar la notificación solo si la tarea tiene alarma
       if (newTask.hasAlarm) {
@@ -161,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         // Determinar a qué pestaña navegar
         int targetIndex;
-        
+
         if (!newTask.hasAlarm) {
           // Sin alarma → Pendientes (índice 0)
           targetIndex = 0;
@@ -177,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
             newTask.assignedTime.month,
             newTask.assignedTime.day,
           );
-          
+
           if (taskDate.isAtSameMomentAs(today)) {
             // Es hoy → Hoy (índice 1)
             targetIndex = 1;
@@ -201,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Esperar un momento para que se muestre la tarea
         await Future.delayed(const Duration(milliseconds: 400));
-        
+
         // Mostrar confirmación visual
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -235,17 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (updatedTask != null) {
-      setState(() {
-        final index = tasks.indexWhere((t) => t.id == task.id);
-        if (index != -1) {
-          tasks[index] = updatedTask;
-          // Ordenar tareas por fecha/hora
-          tasks.sort((a, b) => a.assignedTime.compareTo(b.assignedTime));
-        }
-      });
-
-      // Guardar cambios
-      await _saveTasks();
+      await _taskManager.update(updatedTask);
 
       // Re-programar la notificación con los nuevos datos solo si tiene alarma
       if (updatedTask.hasAlarm) {
@@ -272,12 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final deletedTask = task;
     final deletedIndex = tasks.indexOf(task);
 
-    setState(() {
-      tasks.remove(task);
-    });
-
-    // Guardar cambios
-    await _saveTasks();
+    await _taskManager.remove(task.id);
 
     // Cancelar la notificación solo si tenía alarma
     if (task.hasAlarm) {
@@ -294,11 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Deshacer',
             textColor: Colors.white,
             onPressed: () async {
-              setState(() {
-                tasks.insert(deletedIndex, deletedTask);
-              });
-              // Guardar de nuevo al deshacer
-              await _saveTasks();
+              await _taskManager.restore(deletedTask, deletedIndex);
               // Re-programar la notificación solo si tiene alarma
               if (deletedTask.hasAlarm) {
                 await NotificationService().scheduleNotification(deletedTask);
@@ -311,16 +267,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Método para marcar tarea como completada/no completada
-  void _toggleTaskComplete(Task task) async {
-    setState(() {
-      final index = tasks.indexWhere((t) => t.id == task.id);
-      if (index != -1) {
-        tasks[index] = task.copyWith(isCompleted: !task.isCompleted);
-      }
-    });
-
-    // Guardar cambios
-    await _saveTasks();
+  Future<void> _toggleTaskComplete(Task task) async {
+    await _taskManager.toggleCompleted(task);
   }
 
   // Método para eliminar tarea cuando se descarta la alarma (solo para tareas no repetitivas)
@@ -329,11 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final task = tasks.firstWhere((t) => t.id == taskId);
 
       if (task.repetitionType == RepetitionType.none) {
-        setState(() {
-          tasks.removeWhere((t) => t.id == taskId);
-        });
-
-        await _saveTasks();
+        await _taskManager.remove(taskId);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -381,7 +325,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1: // Hoy
         filtered =
             tasks.where((task) {
-              if (!task.hasAlarm) return false; // Solo mostrar tareas con alarma
+              if (!task.hasAlarm) {
+                return false; // Solo mostrar tareas con alarma
+              }
               final taskDate = DateTime(
                 task.assignedTime.year,
                 task.assignedTime.month,
@@ -394,7 +340,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 2: // Otros días
         filtered =
             tasks.where((task) {
-              if (!task.hasAlarm) return false; // Solo mostrar tareas con alarma
+              if (!task.hasAlarm) {
+                return false; // Solo mostrar tareas con alarma
+              }
               final taskDate = DateTime(
                 task.assignedTime.year,
                 task.assignedTime.month,
@@ -407,7 +355,8 @@ class _HomeScreenState extends State<HomeScreen> {
       case 3: // Repetitivas
         filtered =
             tasks.where((task) {
-              return task.hasAlarm && task.repetitionType != RepetitionType.none;
+              return task.hasAlarm &&
+                  task.repetitionType != RepetitionType.none;
             }).toList();
         break;
       default:
@@ -416,26 +365,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Aplicar filtro por día si está activo
     if (_filterByDay != null) {
-      filtered = filtered.where((task) {
-        final taskDate = DateTime(
-          task.assignedTime.year,
-          task.assignedTime.month,
-          task.assignedTime.day,
-        );
+      filtered =
+          filtered.where((task) {
+            final taskDate = DateTime(
+              task.assignedTime.year,
+              task.assignedTime.month,
+              task.assignedTime.day,
+            );
 
-        switch (_filterByDay) {
-          case 'today':
-            return taskDate.isAtSameMomentAs(today);
-          case 'tomorrow':
-            return taskDate.isAtSameMomentAs(tomorrow);
-          case 'week':
-            return taskDate.isAfter(today) && taskDate.isBefore(nextWeek);
-          case 'month':
-            return taskDate.isAfter(today) && taskDate.isBefore(nextMonth);
-          default:
-            return true;
-        }
-      }).toList();
+            switch (_filterByDay) {
+              case 'today':
+                return taskDate.isAtSameMomentAs(today);
+              case 'tomorrow':
+                return taskDate.isAtSameMomentAs(tomorrow);
+              case 'week':
+                return taskDate.isAfter(today) && taskDate.isBefore(nextWeek);
+              case 'month':
+                return taskDate.isAfter(today) && taskDate.isBefore(nextMonth);
+              default:
+                return true;
+            }
+          }).toList();
     }
 
     // Ordenar por fecha y hora
@@ -445,7 +395,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       return a.assignedTime.compareTo(b.assignedTime);
     });
-    
+
     return filtered;
   }
 
@@ -608,7 +558,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.sort, color: Colors.white70, size: 20),
+                          const Icon(
+                            Icons.sort,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           const Text(
                             'Orden:',
@@ -653,7 +607,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Filtro por día
                   Row(
                     children: [
-                      const Icon(Icons.date_range, color: Colors.white70, size: 20),
+                      const Icon(
+                        Icons.date_range,
+                        color: Colors.white70,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       const Text(
                         'Período:',
@@ -757,7 +715,7 @@ class _HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.check_box_outlined), 
+            icon: Icon(Icons.check_box_outlined),
             label: 'Pendientes',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.today), label: 'Hoy'),
