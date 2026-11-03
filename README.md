@@ -64,7 +64,7 @@ La compilación de distribución requiere configurar una clave de firma propia e
 
 ## Descarga
 
-La versión publicada en GitHub Releases está disponible [aquí](https://github.com/mesegr/ToDo-app/releases/download/V1.0.0/app-release.apk).
+La última versión publicada en GitHub Releases se puede descargar [aquí](https://github.com/mesegr/ToDo-app/releases/latest/download/app-release.apk).
 
 ## Problemas y sugerencias
 
