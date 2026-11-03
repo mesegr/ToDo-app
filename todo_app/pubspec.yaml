@@ -1,5 +1,5 @@
 name: todo_app
-description: "A new Flutter project."
+description: "Aplicación Android para organizar tareas, recordatorios y alarmas recurrentes."
 publish_to: 'none'
 version: 0.1.0
 
