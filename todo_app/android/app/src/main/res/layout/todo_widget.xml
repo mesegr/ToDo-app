@@ -33,9 +33,11 @@
                 android:textColor="#D8B4FE"
                 android:textSize="14sp" />
         </LinearLayout>
-        <View
+        <TextView
+            android:importantForAccessibility="no"
             android:layout_width="1dp"
             android:layout_height="48dp"
+            android:text=""
             android:background="#665B4D70" />
         <LinearLayout
             android:layout_width="0dp"
