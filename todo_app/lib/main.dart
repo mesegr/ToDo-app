@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:home_widget/home_widget.dart' hide callbackDispatcher;
 import 'package:workmanager/workmanager.dart';
 import 'screens/home_screen.dart';
+import 'screens/add_task_screen.dart';
 import 'services/notification_service.dart';
 import 'services/alarm_worker.dart';
 import 'services/widget_service.dart';
+
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
+void _handleWidgetUri(Uri? uri) {
+  if (uri?.host == 'add-task') {
+    appNavigatorKey.currentState?.push(
+      MaterialPageRoute(builder: (_) => const AddTaskScreen()),
+    );
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,7 +24,6 @@ void main() async {
   // Inicializar Workmanager para alarmas en segundo plano
   await Workmanager().initialize(
     callbackDispatcher,
-    isInDebugMode: false,
   );
 
   // Inicializar el servicio de notificaciones
@@ -20,6 +31,9 @@ void main() async {
 
   // Inicializar el widget
   await WidgetService.initialize();
+
+  HomeWidget.widgetClicked.listen(_handleWidgetUri);
+  _handleWidgetUri(await HomeWidget.initiallyLaunchedFromHomeWidget());
 
   runApp(const MainApp());
 }
@@ -30,6 +44,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       title: 'Todo App',
       debugShowCheckedModeBanner: false,
       locale: const Locale('es', 'ES'),

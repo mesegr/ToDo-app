@@ -16,19 +16,30 @@
         android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/widget_summary"
+        android:id="@+id/widget_pending_count"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:textColor="#D8B4FE"
+        android:textColor="#FFFFFF"
         android:textSize="14sp" />
 
     <TextView
-        android:id="@+id/widget_hint"
+        android:id="@+id/widget_today_count"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Toca para abrir la app"
-        android:textColor="#BDB7C9"
-        android:textSize="12sp" />
+        android:layout_marginTop="4dp"
+        android:textColor="#D8B4FE"
+        android:textSize="14sp" />
+
+    <Button
+        android:id="@+id/widget_add_task"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:backgroundTint="#8B5CF6"
+        android:minHeight="44dp"
+        android:text="＋  Añadir tarea"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp" />
 </LinearLayout>

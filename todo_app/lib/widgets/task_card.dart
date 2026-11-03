@@ -57,8 +57,8 @@ class _TaskCardState extends State<TaskCard> {
                         height: 50,
                         decoration: BoxDecoration(
                           color: widget.task.isCompleted 
-                            ? Colors.green.withOpacity(0.2)
-                            : const Color(0xFF8B5CF6).withOpacity(0.2),
+                            ? Colors.green.withValues(alpha: 0.2)
+                            : const Color(0xFF8B5CF6).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
@@ -77,7 +77,7 @@ class _TaskCardState extends State<TaskCard> {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(

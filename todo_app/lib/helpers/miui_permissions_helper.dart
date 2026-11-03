@@ -10,7 +10,7 @@ class MiuiPermissionsHelper {
               children: [
                 Icon(Icons.warning_amber_rounded, color: Colors.orange[300]),
                 const SizedBox(width: 12),
-                const Text('Configuración MIUI Requerida'),
+                const Expanded(child: Text('Configuración MIUI Requerida')),
               ],
             ),
             content: SingleChildScrollView(
@@ -44,7 +44,7 @@ class MiuiPermissionsHelper {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -59,7 +59,7 @@ class MiuiPermissionsHelper {
                             'Sin estos permisos, MIUI cancelará tus alarmas',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
                         ),
@@ -118,7 +118,7 @@ class MiuiPermissionsHelper {
                 description,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
             ],

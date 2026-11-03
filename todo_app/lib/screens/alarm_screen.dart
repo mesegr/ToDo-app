@@ -119,7 +119,7 @@ class _AlarmScreenState extends State<AlarmScreen>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.5),
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.5),
                         blurRadius: 30,
                         spreadRadius: 10,
                       ),
@@ -169,7 +169,7 @@ class _AlarmScreenState extends State<AlarmScreen>
                 widget.task.getRepetitionDescription(),
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -197,7 +197,7 @@ class _AlarmScreenState extends State<AlarmScreen>
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
-                      shadowColor: const Color(0xFF8B5CF6).withOpacity(0.5),
+                      shadowColor: const Color(0xFF8B5CF6).withValues(alpha: 0.5),
                     ),
                     child: const Text(
                       'DETENER ALARMA',
@@ -218,10 +218,10 @@ class _AlarmScreenState extends State<AlarmScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.2),
+                    color: Colors.orange.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.orange.withOpacity(0.5),
+                      color: Colors.orange.withValues(alpha: 0.5),
                       width: 1,
                     ),
                   ),

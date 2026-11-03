@@ -3,9 +3,6 @@ import 'package:workmanager/workmanager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:vibration/vibration.dart';
 
-// Nombre único para el worker de alarmas
-const String alarmWorkerName = 'alarm_worker';
-
 // Callback que se ejecuta en segundo plano cuando llega la hora de la alarma
 @pragma('vm:entry-point')
 void callbackDispatcher() {

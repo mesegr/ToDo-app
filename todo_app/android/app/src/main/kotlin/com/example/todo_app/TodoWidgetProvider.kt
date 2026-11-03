@@ -5,8 +5,10 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetProvider
+import es.antonborri.home_widget.HomeWidgetLaunchIntent
 
 class TodoWidgetProvider : HomeWidgetProvider() {
     override fun onUpdate(
@@ -15,24 +17,22 @@ class TodoWidgetProvider : HomeWidgetProvider() {
         appWidgetIds: IntArray,
         widgetData: SharedPreferences,
     ) {
-        val total = widgetData.getInt("task_count", 0)
-        val pending = widgetData.getInt("pending_count", 0)
-        val completed = widgetData.getInt("completed_count", 0)
-        val summary = "$pending pendientes · $completed completadas"
+        val pending = widgetData.getInt("all_pending_count", 0)
+        val today = widgetData.getInt("today_count", 0)
 
-        val openAppIntent = PendingIntent.getActivity(
-            context,
-            0,
-            Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        val openAppIntent = HomeWidgetLaunchIntent.getActivity(
+            context, MainActivity::class.java, Uri.parse("todoapp://home"),
+        )
+        val addTaskIntent = HomeWidgetLaunchIntent.getActivity(
+            context, MainActivity::class.java, Uri.parse("todoapp://add-task"),
         )
 
         appWidgetIds.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.todo_widget).apply {
-                setTextViewText(R.id.widget_summary, if (total == 0) "No hay tareas para hoy" else summary)
+                setTextViewText(R.id.widget_pending_count, "Pendientes: $pending")
+                setTextViewText(R.id.widget_today_count, "Tareas de hoy: $today")
                 setOnClickPendingIntent(R.id.widget_root, openAppIntent)
+                setOnClickPendingIntent(R.id.widget_add_task, addTaskIntent)
             }
             appWidgetManager.updateAppWidget(widgetId, views)
         }

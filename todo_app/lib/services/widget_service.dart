@@ -26,6 +26,8 @@ class WidgetService {
         await HomeWidget.saveWidgetData<int>('task_count', 0);
         await HomeWidget.saveWidgetData<int>('pending_count', 0);
         await HomeWidget.saveWidgetData<int>('completed_count', 0);
+        await HomeWidget.saveWidgetData<int>('all_pending_count', 0);
+        await HomeWidget.saveWidgetData<int>('today_count', 0);
         
         await HomeWidget.updateWidget(
           name: 'TodoWidgetProvider',
@@ -49,6 +51,8 @@ class WidgetService {
         await HomeWidget.saveWidgetData<int>('task_count', 0);
         await HomeWidget.saveWidgetData<int>('pending_count', 0);
         await HomeWidget.saveWidgetData<int>('completed_count', 0);
+        await HomeWidget.saveWidgetData<int>('all_pending_count', 0);
+        await HomeWidget.saveWidgetData<int>('today_count', 0);
         
         await HomeWidget.updateWidget(
           name: 'TodoWidgetProvider',
@@ -99,6 +103,14 @@ class WidgetService {
       await HomeWidget.saveWidgetData<int>('task_count', todayTasks.length);
       await HomeWidget.saveWidgetData<int>('pending_count', pendingTasks);
       await HomeWidget.saveWidgetData<int>('completed_count', completedTasks);
+      await HomeWidget.saveWidgetData<int>(
+        'all_pending_count',
+        tasks.where((task) => !task.hasAlarm && !task.isCompleted).length,
+      );
+      await HomeWidget.saveWidgetData<int>(
+        'today_count',
+        todayTasks.where((task) => !task.isCompleted).length,
+      );
 
       // Actualizar el widget
       await HomeWidget.updateWidget(
