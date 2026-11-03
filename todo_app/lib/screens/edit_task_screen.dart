@@ -261,36 +261,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Selector de fecha
-            Card(
-              child: ListTile(
-                leading: const Icon(
-                  Icons.calendar_today,
-                  color: Color(0xFF8B5CF6),
-                ),
-                title: const Text('Fecha'),
-                subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () => _selectDate(context),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Selector de hora
-            Card(
-              child: ListTile(
-                leading: const Icon(
-                  Icons.access_time,
-                  color: Color(0xFF8B5CF6),
-                ),
-                title: const Text('Hora'),
-                subtitle: Text(_selectedTime.format(context)),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () => _selectTime(context),
-              ),
-            ),
-            const SizedBox(height: 24),
-
             // Switch para activar/desactivar alarma
             Card(
               child: SwitchListTile(

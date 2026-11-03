@@ -51,17 +51,7 @@ class NotificationService {
       '@mipmap/ic_launcher',
     );
 
-    // Configuración para iOS
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: false, // Sin sonido
-    );
-
-    const initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
+    const initSettings = InitializationSettings(android: androidSettings);
 
     await _notifications.initialize(
       initSettings,
@@ -107,16 +97,6 @@ class NotificationService {
       print('✅ Puede programar alarmas exactas: $canSchedule');
     }
 
-    final ios =
-        _notifications
-            .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin
-            >();
-
-    if (ios != null) {
-      await ios.requestPermissions(alert: true, badge: true, sound: false);
-      print('🍎 Permisos de iOS solicitados');
-    }
   }
 
   void _onNotificationTap(NotificationResponse response) {
@@ -150,17 +130,7 @@ class NotificationService {
       visibility: NotificationVisibility.public,
     );
 
-    // Detalles para iOS
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: false,
-    );
-
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+    const details = NotificationDetails(android: androidDetails);
 
     final scheduledDate = tz.TZDateTime.from(task.assignedTime, tz.local);
 
